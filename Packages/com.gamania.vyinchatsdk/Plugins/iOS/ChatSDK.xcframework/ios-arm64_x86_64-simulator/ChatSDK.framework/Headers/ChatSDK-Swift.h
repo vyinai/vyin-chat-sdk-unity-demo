@@ -1360,7 +1360,7 @@ SWIFT_CLASS("_TtC7ChatSDK16UserUpdateParams")
 
 SWIFT_EXTERN void ChatSDK_Connect(char const * _Nullable userId, char const * _Nullable authToken, int32_t callbackId) SWIFT_NOEXCEPT;
 
-SWIFT_EXTERN void ChatSDK_CreateGroupChannel(char const * _Nullable channelName, char const * _Nullable userIdsJson, BOOL isDistinct, int32_t callbackId) SWIFT_NOEXCEPT;
+SWIFT_EXTERN void ChatSDK_CreateGroupChannel(char const * _Nullable channelName, char const * _Nullable userIdsJson, char const * _Nullable operatorUserIdsJson, BOOL isDistinct, int32_t callbackId) SWIFT_NOEXCEPT;
 
 SWIFT_EXTERN void ChatSDK_Initialize(char const * _Nonnull appId) SWIFT_NOEXCEPT;
 
@@ -2764,7 +2764,7 @@ SWIFT_CLASS("_TtC7ChatSDK16UserUpdateParams")
 
 SWIFT_EXTERN void ChatSDK_Connect(char const * _Nullable userId, char const * _Nullable authToken, int32_t callbackId) SWIFT_NOEXCEPT;
 
-SWIFT_EXTERN void ChatSDK_CreateGroupChannel(char const * _Nullable channelName, char const * _Nullable userIdsJson, BOOL isDistinct, int32_t callbackId) SWIFT_NOEXCEPT;
+SWIFT_EXTERN void ChatSDK_CreateGroupChannel(char const * _Nullable channelName, char const * _Nullable userIdsJson, char const * _Nullable operatorUserIdsJson, BOOL isDistinct, int32_t callbackId) SWIFT_NOEXCEPT;
 
 SWIFT_EXTERN void ChatSDK_Initialize(char const * _Nonnull appId) SWIFT_NOEXCEPT;
 

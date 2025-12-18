@@ -10,7 +10,7 @@
 		</data>
 		<key>Headers/ChatSDK-Swift.h</key>
 		<data>
-		7LL/L/p4cvMpywcKqTIqADdCXi0=
+		PwrczLWMHZ38u1DlsRhh0EH64RQ=
 		</data>
 		<key>Info.plist</key>
 		<data>
@@ -18,11 +18,11 @@
 		</data>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.abi.json</key>
 		<data>
-		KUK2Pu6qvJ7W/22U/yUxBaEDwto=
+		m1KVABVKZXzH5NtO9mYDFkH446Y=
 		</data>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.private.swiftinterface</key>
 		<data>
-		X7ycHwHqw28FEqv4gX9wwbGUxH4=
+		bEOMDMtknkMER0Iihh8gK9oxF8c=
 		</data>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.swiftdoc</key>
 		<data>
@@ -30,11 +30,11 @@
 		</data>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.swiftinterface</key>
 		<data>
-		X7ycHwHqw28FEqv4gX9wwbGUxH4=
+		bEOMDMtknkMER0Iihh8gK9oxF8c=
 		</data>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.swiftmodule</key>
 		<data>
-		aGaJNA1lCDFqA3Cm/IwBHaQftv4=
+		sLuZ1AOuvrQYn/uH0XZxBHVrONM=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -54,21 +54,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			yjZl2dN8Zm/Hn4YgsS3db+nKWoDGYHrrU/bRkQNLM6w=
+			kmAINYAXghLZBlU3Wg0anQCQ7LmRLZxvcLCsWryLYhQ=
 			</data>
 		</dict>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			1zduGE9vbkPDLfoJUf4MRS9EMatZH4PfipYmLtCNAzY=
+			vQeBjUwbQqzGSI+GCnaC3OXKb5JVE3TzzxxvAFx+Sfg=
 			</data>
 		</dict>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			i9O9pz0pBfHsUqmwMiwVQ7GJ/AamGwY5gl5s5T0ppPk=
+			+yosgYM3AtsOFjiVsJKVPHgT/EyI3g0lcx3SRfbCAPY=
 			</data>
 		</dict>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.swiftdoc</key>
@@ -82,14 +82,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			i9O9pz0pBfHsUqmwMiwVQ7GJ/AamGwY5gl5s5T0ppPk=
+			+yosgYM3AtsOFjiVsJKVPHgT/EyI3g0lcx3SRfbCAPY=
 			</data>
 		</dict>
 		<key>Modules/ChatSDK.swiftmodule/arm64-apple-ios.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			y9NjjNpAhZRnLioGZcgMgS+MDLoF56BBp3LkmqlaptM=
+			ROxDUyDbfTDc7Ocxo4DV6S7ACWQSrizS51N8RxW1Njc=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

@@ -36,7 +36,7 @@ namespace VyinChatSdk.Internal
     private static extern void ChatSDK_Connect(string userId, string authToken, int callbackId);
 
     [DllImport("__Internal")]
-    private static extern void ChatSDK_CreateGroupChannel(string channelName, string userIdsJson, bool isDistinct, int callbackId);
+    private static extern void ChatSDK_CreateGroupChannel(string channelName, string userIdsJson, string operatorUserIdsJson, bool isDistinct, int callbackId);
 
     [DllImport("__Internal")]
     private static extern void ChatSDK_InviteUsers(string channelUrl, string userIdsJson, int callbackId);
@@ -176,16 +176,20 @@ namespace VyinChatSdk.Internal
         /// </summary>
         /// <param name="channelName">Channel name</param>
         /// <param name="userIds">Array of user IDs</param>
+        /// <param name="operatorUserIds">Array of operator user IDs</param>
         /// <param name="isDistinct">Whether to create a distinct channel</param>
         /// <param name="callback">Callback function (result, error)</param>
-        private static void CreateGroupChannel(string channelName, string[] userIds, bool isDistinct, Action<string, string> callback)
+        private static void CreateGroupChannel(string channelName, string[] userIds, string[] operatorUserIds, bool isDistinct, Action<string, string> callback)
         {
 #if UNITY_IOS && !UNITY_EDITOR
         // Convert to JSON array
         string userIdsJson = "[\"" + string.Join("\",\"", userIds) + "\"]";
+        string operatorUserIdsJson = (operatorUserIds != null && operatorUserIds.Length > 0)
+            ? "[\"" + string.Join("\",\"", operatorUserIds) + "\"]"
+            : null;
 
         int callbackId = RegisterCallback(callback);
-        ChatSDK_CreateGroupChannel(channelName, userIdsJson, isDistinct, callbackId);
+        ChatSDK_CreateGroupChannel(channelName, userIdsJson, operatorUserIdsJson, isDistinct, callbackId);
 #else
             Debug.LogWarning("[ChatSDK] Only supported on iOS device");
             callback?.Invoke(null, "Not supported on this platform");
@@ -207,6 +211,7 @@ namespace VyinChatSdk.Internal
 
             string channelName = channelCreateParams.Name;
             string[] userIds = (channelCreateParams.UserIds ?? new System.Collections.Generic.List<string>()).ToArray();
+            string[] operatorUserIds = (channelCreateParams.OperatorUserIds ?? new System.Collections.Generic.List<string>()).ToArray();
             bool isDistinct = channelCreateParams.IsDistinct;
 
             // Internal handler to convert string result to VcGroupChannel
@@ -241,7 +246,7 @@ namespace VyinChatSdk.Internal
                 }
             }
 
-            CreateGroupChannel(channelName, userIds, isDistinct, handler);
+            CreateGroupChannel(channelName, userIds, operatorUserIds, isDistinct, handler);
         }
 
         // Simple JSON value extractor (for basic key-value pairs)
