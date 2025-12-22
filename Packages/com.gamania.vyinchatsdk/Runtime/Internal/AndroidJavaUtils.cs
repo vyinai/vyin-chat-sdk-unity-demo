@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VyinChatSdk;
@@ -93,7 +94,7 @@ public static class AndroidJavaUtils
 
         try
         {
-            string errorCode = gimException.Call<string>("getCode");
+            int errorCode = gimException.Call<int>("getCode");
             string errorMessage = gimException.Call<string>("getMessage");
             return $"{errorCode}: {errorMessage}";
         }
