@@ -12,6 +12,16 @@ namespace VyinChatSdk
             VcGroupChannelCreateParams inChannelCreateParams,
             VcGroupChannelCallbackHandler inGroupChannelCallbackHandler)
         {
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                Debug.Log($"[VcGroupChannelModule] Creating channel in Editor mode: {inChannelCreateParams.Name}");
+                var coroutine = Internal.VyinChatEditor.CreateGroupChannel(inChannelCreateParams, inGroupChannelCallbackHandler);
+                Internal.VyinChatEditor.GetCoroutineRunner().StartCoroutine(coroutine);
+                return;
+            }
+#endif
+
             if (Application.platform == RuntimePlatform.Android)
             {
                 try

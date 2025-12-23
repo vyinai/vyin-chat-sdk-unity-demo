@@ -150,12 +150,28 @@ namespace VyinChatSdk
             TryExecute(() =>
             {
 #if UNITY_EDITOR
-                SimulateEditorCall(() =>
+                if (Application.isEditor)
                 {
-                    string fakeResult = $"{{\"messageId\":{DateTime.Now.Ticks},\"message\":\"{message}\"}}";
-                    callback?.Invoke(fakeResult, null);
-                });
-#else
+                    Debug.Log($"[VyinChat] Sending message in Editor mode to channel: {channelUrl}");
+
+                    void handler(VcBaseMessage baseMessage, string error)
+                    {
+                        if (!string.IsNullOrEmpty(error))
+                        {
+                            callback?.Invoke(null, error);
+                            Debug.LogError("[VyinChat] Error sending message: " + error);
+                            return;
+                        }
+                        string resultJson = JsonConvert.SerializeObject(baseMessage);
+                        callback?.Invoke(resultJson, null);
+                    }
+
+                    var coroutine = Internal.VyinChatEditor.SendMessage(channelUrl, message, handler);
+                    Internal.VyinChatEditor.GetCoroutineRunner().StartCoroutine(coroutine);
+                    return;
+                }
+#endif
+#if !UNITY_EDITOR
                 if (Application.platform == RuntimePlatform.Android)
                 {
                     try

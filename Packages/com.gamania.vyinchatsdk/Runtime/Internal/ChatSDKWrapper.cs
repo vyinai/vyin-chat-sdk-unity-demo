@@ -10,6 +10,11 @@ namespace VyinChatSdk.Internal
 {
     public class ChatSDKWrapper
     {
+        // Configuration tracking for Editor mode
+        private static string customAppId = null;
+        private static string customDomain = null;
+        private static bool hasCustomConfig = false;
+
         #region iOS Native Bridge
 
 #if UNITY_IOS && !UNITY_EDITOR
@@ -118,11 +123,16 @@ namespace VyinChatSdk.Internal
         /// <param name="domain">Environment domain (e.g., "dev.gim.beango.com", "stg.gim.beango.com", "gamania.chat")</param>
         public static void SetConfiguration(string appId, string domain)
         {
+            // Track configuration for Editor mode
+            customAppId = appId;
+            customDomain = domain;
+            hasCustomConfig = true;
+
 #if UNITY_IOS && !UNITY_EDITOR
         ChatSDK_SetConfiguration(appId, domain);
         Debug.Log($"[ChatSDK] Configuration set - appId: {appId}, domain: {domain}");
 #else
-            Debug.LogWarning("[ChatSDK] SetConfiguration only supported on iOS device");
+            Debug.Log($"[ChatSDK] Configuration set (Editor) - appId: {appId}, domain: {domain}");
 #endif
         }
 
@@ -131,12 +141,40 @@ namespace VyinChatSdk.Internal
         /// </summary>
         public static void ResetConfiguration()
         {
+            customAppId = null;
+            customDomain = null;
+            hasCustomConfig = false;
+
 #if UNITY_IOS && !UNITY_EDITOR
         ChatSDK_ResetConfiguration();
         Debug.Log("[ChatSDK] Configuration reset to defaults");
 #else
-            Debug.LogWarning("[ChatSDK] ResetConfiguration only supported on iOS device");
+            Debug.Log("[ChatSDK] Configuration reset to defaults (Editor)");
 #endif
+        }
+
+        /// <summary>
+        /// Check if custom configuration has been set
+        /// </summary>
+        public static bool HasCustomConfiguration()
+        {
+            return hasCustomConfig;
+        }
+
+        /// <summary>
+        /// Get custom domain (for Editor mode)
+        /// </summary>
+        public static string GetCustomDomain()
+        {
+            return customDomain;
+        }
+
+        /// <summary>
+        /// Get custom app ID (for Editor mode)
+        /// </summary>
+        public static string GetCustomAppId()
+        {
+            return customAppId;
         }
 
         /// <summary>

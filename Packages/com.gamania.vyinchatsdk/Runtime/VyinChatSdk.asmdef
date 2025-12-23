@@ -3,7 +3,8 @@
     "references": [
         "UnityEngine.CoreModule",
         "UnityEngine.AndroidJNIModule",
-        "Newtonsoft.Json-for-Unity"
+        "Newtonsoft.Json-for-Unity",
+        "WebSocketSharp"
     ],
     "includePlatforms": [],
     "excludePlatforms": []
