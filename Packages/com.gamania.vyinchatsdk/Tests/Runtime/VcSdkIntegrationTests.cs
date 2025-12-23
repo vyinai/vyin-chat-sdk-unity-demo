@@ -25,8 +25,8 @@ namespace VyinChatSdk.Tests
         // PROD environment configuration
         private const string PROD_APP_ID = "adb53e88-4c35-469a-a888-9e49ef1641b2";
         private const string PROD_DOMAIN = "gamania.chat";
-        private const string TEST_USER_ID = "testuser1";
-        private const string TEST_USER_ID_2 = "testuser2";
+        private const string TEST_USER_ID = "tester01";
+        private const string TEST_USER_ID_2 = "tester02";
 
         private bool isInitialized = false;
         private bool isConnected = false;

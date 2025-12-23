@@ -46,18 +46,40 @@ namespace VyinChatSdk.Internal
 
             httpClient = new VcHttpClient(currentAppId, currentDomain, userId);
 
-            // For now, simulate a successful connection
-            // In a real implementation, you'd call the login API here
-            EditorApplication.delayCall += () =>
+            // Start WebSocket login to get session key
+            var coroutine = ConnectWithWebSocket(userId, callback);
+            GetCoroutineRunner().StartCoroutine(coroutine);
+        }
+
+        /// <summary>
+        /// Connect via WebSocket to obtain session key
+        /// </summary>
+        private static IEnumerator ConnectWithWebSocket(string userId, VcUserHandler callback)
+        {
+            Debug.Log("[VyinChatEditor] Starting WebSocket login to get session key...");
+
+            string loginError = null;
+
+            // Connect and login via WebSocket
+            yield return httpClient.ConnectAndLogin((sessionKey, error) =>
             {
-                var user = new VcUser
-                {
-                    UserId = userId,
-                    Nickname = userId
-                };
-                Debug.Log($"[VyinChatEditor] Connected as userId={user.UserId}");
-                callback?.Invoke(user, null);
+                loginError = error;
+            });
+
+            if (!string.IsNullOrEmpty(loginError))
+            {
+                Debug.LogError($"[VyinChatEditor] WebSocket login failed: {loginError}");
+                callback?.Invoke(null, loginError);
+                yield break;
+            }
+
+            var user = new VcUser
+            {
+                UserId = userId,
+                Nickname = userId
             };
+            Debug.Log($"[VyinChatEditor] Connected as userId={user.UserId}");
+            callback?.Invoke(user, null);
         }
 
         /// <summary>
