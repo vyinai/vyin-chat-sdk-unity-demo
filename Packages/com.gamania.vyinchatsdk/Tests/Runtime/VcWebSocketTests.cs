@@ -298,8 +298,8 @@ namespace VyinChatSdk.Tests
             Debug.Log(string.Join("\n", logs));
         }
 
-        [Test]
-        public void SendMessage_ShouldLogError_WhenNotConnected()
+        [UnityTest]
+        public IEnumerator SendMessage_ShouldLogError_WhenNotConnected()
         {
             // Arrange
             bool errorLogged = false;
@@ -311,6 +311,9 @@ namespace VyinChatSdk.Tests
 
             // Act
             webSocket.Send("Test message");
+
+            // Wait for dispatcher to process the error event
+            yield return null;
 
             // Assert
             Assert.IsTrue(errorLogged, "Should log error when not connected");
