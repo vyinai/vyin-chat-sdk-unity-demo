@@ -8,6 +8,8 @@
 
 using System;
 using NativeWebSocket;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Gamania.VyinChatSDK.Data.Network
@@ -21,12 +23,17 @@ namespace Gamania.VyinChatSDK.Data.Network
         public event Action OnConnected;
         public event Action OnDisconnected;
         public event Action<string> OnMessageReceived;
+        public event Action<string> OnAuthenticated;
         public event Action<string> OnError;
 
         public bool IsConnected => _webSocket != null && _webSocket.State == WebSocketState.Open;
+        public string SessionKey => _sessionKey;
 
         private WebSocket _webSocket;
         private WebSocketConfig _config;
+        private string _sessionKey;
+        private CancellationTokenSource _authTimeoutCts;
+        private readonly TimeSpan _authTimeout = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// Connect to WebSocket server with configuration
@@ -40,6 +47,8 @@ namespace Gamania.VyinChatSDK.Data.Network
             }
 
             _config = config;
+            _sessionKey = null;
+            StartAuthTimeout();
 
             // Build WSS URL using config
             string url;
@@ -83,6 +92,7 @@ namespace Gamania.VyinChatSDK.Data.Network
             if (_webSocket != null)
             {
                 Debug.Log("[UnityWebSocketClient] Disconnecting");
+                CancelAuthTimeout();
 
                 try
                 {
@@ -142,6 +152,7 @@ namespace Gamania.VyinChatSDK.Data.Network
         private void HandleOnClose(WebSocketCloseCode closeCode)
         {
             Debug.Log($"[UnityWebSocketClient] Connection closed: {closeCode}");
+            CancelAuthTimeout();
             OnDisconnected?.Invoke();
         }
 
@@ -151,6 +162,29 @@ namespace Gamania.VyinChatSDK.Data.Network
             {
                 string message = System.Text.Encoding.UTF8.GetString(data);
                 Debug.Log($"[UnityWebSocketClient] Received: {message}");
+
+                // Handle LOGI / authentication
+                var logi = Domain.Commands.CommandParser.ParseLogiCommand(message);
+                if (logi != null)
+                {
+                    if (logi.IsSuccess())
+                    {
+                        _sessionKey = logi.SessionKey;
+                        CancelAuthTimeout();
+                        OnAuthenticated?.Invoke(_sessionKey);
+                    }
+                    else
+                    {
+                        CancelAuthTimeout();
+                        OnError?.Invoke("Authentication failed (LOGI error).");
+                    }
+                }
+                else if (message.StartsWith("EROR", StringComparison.Ordinal))
+                {
+                    CancelAuthTimeout();
+                    OnError?.Invoke("Authentication failed (EROR message).");
+                }
+
                 OnMessageReceived?.Invoke(message);
             }
             catch (Exception ex)
@@ -163,7 +197,41 @@ namespace Gamania.VyinChatSDK.Data.Network
         private void HandleOnError(string errorMessage)
         {
             Debug.LogError($"[UnityWebSocketClient] WebSocket error: {errorMessage}");
+            CancelAuthTimeout();
             OnError?.Invoke(errorMessage);
+        }
+
+        private void StartAuthTimeout()
+        {
+            CancelAuthTimeout();
+            _authTimeoutCts = new CancellationTokenSource();
+            var token = _authTimeoutCts.Token;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(_authTimeout, token);
+                    if (token.IsCancellationRequested || !string.IsNullOrEmpty(_sessionKey))
+                    {
+                        return;
+                    }
+                    OnError?.Invoke("Authentication timeout (LOGI not received).");
+                }
+                catch (TaskCanceledException)
+                {
+                    // ignore
+                }
+            }, token);
+        }
+
+        private void CancelAuthTimeout()
+        {
+            if (_authTimeoutCts != null)
+            {
+                _authTimeoutCts.Cancel();
+                _authTimeoutCts.Dispose();
+                _authTimeoutCts = null;
+            }
         }
     }
 }
