@@ -6,7 +6,8 @@
   "unityRelease": "0f1",
   "description": "Vyin Chat SDK for Unity.",
   "dependencies": {
-    "com.unity.nuget.newtonsoft-json": "3.2.2"
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#upm"
   },
   "changelogUrl": "https://example.com/changelog.html",
   "documentationUrl": "https://example.com/",
