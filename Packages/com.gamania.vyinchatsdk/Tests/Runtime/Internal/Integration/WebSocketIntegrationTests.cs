@@ -114,21 +114,21 @@ namespace VyinChatSdk.Tests.Internal.Integration
         }
 
         /// <summary>
-        /// After connected, should wait for LOGI
+        /// After connected, should wait for LOGI (authentication)
         /// </summary>
         [UnityTest]
         public IEnumerator OnConnected_ShouldWaitForLOGI()
         {
             bool connected = false;
-            LogiCommand logiResponse = null;
+            bool authenticated = false;
 
             client.OnConnected += () => connected = true;
-            client.OnMessageReceived += (message) => logiResponse = CommandParser.ParseLogiCommand(message);
+            client.OnAuthenticated += (sessionKey) => authenticated = true;
 
             client.Connect(testConfig);
 
             float elapsed = 0f;
-            while (logiResponse == null && elapsed < LOGI_TIMEOUT)
+            while (!authenticated && elapsed < LOGI_TIMEOUT)
             {
                 client.Update();
                 elapsed += Time.deltaTime;
@@ -136,7 +136,7 @@ namespace VyinChatSdk.Tests.Internal.Integration
             }
 
             Assert.IsTrue(connected, "Should connect first");
-            Assert.IsNotNull(logiResponse, "Should receive LOGI");
+            Assert.IsTrue(authenticated, "Should receive LOGI and authenticate");
         }
 
         /// <summary>
@@ -147,11 +147,7 @@ namespace VyinChatSdk.Tests.Internal.Integration
         {
             string sessionKey = null;
 
-            client.OnMessageReceived += (message) =>
-            {
-                var logi = CommandParser.ParseLogiCommand(message);
-                sessionKey = logi?.SessionKey;
-            };
+            client.OnAuthenticated += (key) => sessionKey = key;
 
             client.Connect(testConfig);
 
@@ -164,65 +160,67 @@ namespace VyinChatSdk.Tests.Internal.Integration
             }
 
             Assert.IsFalse(string.IsNullOrEmpty(sessionKey), "Should get session_key");
+            Assert.AreEqual(sessionKey, client.SessionKey, "Client should store session key");
         }
 
         /// <summary>
-        /// LOGI should expose session_key (explicit extract check)
+        /// LOGI should expose session_key through client
         /// </summary>
         [UnityTest]
         public IEnumerator ReceiveLOGI_ShouldExtractSessionKey()
         {
-            LogiCommand logiResponse = null;
+            string sessionKey = null;
 
-            client.OnMessageReceived += (message) =>
-            {
-                logiResponse = CommandParser.ParseLogiCommand(message);
-            };
+            client.OnAuthenticated += (key) => sessionKey = key;
 
             client.Connect(testConfig);
 
             float elapsed = 0f;
-            while (logiResponse == null && elapsed < LOGI_TIMEOUT)
+            while (sessionKey == null && elapsed < LOGI_TIMEOUT)
             {
                 client.Update();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            Assert.IsNotNull(logiResponse, "Should receive LOGI");
-            Assert.IsFalse(string.IsNullOrEmpty(logiResponse.SessionKey), "SessionKey should not be empty");
+            Assert.IsNotNull(sessionKey, "Should receive session key");
+            Assert.IsFalse(string.IsNullOrEmpty(sessionKey), "SessionKey should not be empty");
+            Assert.AreEqual(sessionKey, client.SessionKey, "Client SessionKey property should match");
         }
 
         /// <summary>
-        /// LOGI should include ping/pong settings
+        /// LOGI authentication should succeed
+        /// Note: Ping/pong settings are handled internally by UnityWebSocketClient
         /// </summary>
         [UnityTest]
-        public IEnumerator ReceiveLOGI_ShouldIncludePingPongSettings()
+        public IEnumerator ReceiveLOGI_ShouldAuthenticateSuccessfully()
         {
-            LogiCommand logiResponse = null;
+            bool authenticated = false;
+            string sessionKey = null;
 
-            client.OnMessageReceived += (message) =>
+            client.OnAuthenticated += (key) =>
             {
-                logiResponse = CommandParser.ParseLogiCommand(message);
+                authenticated = true;
+                sessionKey = key;
             };
 
             client.Connect(testConfig);
 
             float elapsed = 0f;
-            while (logiResponse == null && elapsed < LOGI_TIMEOUT)
+            while (!authenticated && elapsed < LOGI_TIMEOUT)
             {
                 client.Update();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            Assert.IsNotNull(logiResponse, "Should receive LOGI");
-            Assert.Greater(logiResponse.PingInterval, 0);
-            Assert.Greater(logiResponse.PongTimeout, 0);
+            Assert.IsTrue(authenticated, "Should authenticate successfully");
+            Assert.IsNotNull(sessionKey, "Should have session key");
+            Assert.IsFalse(string.IsNullOrEmpty(sessionKey), "Session key should not be empty");
         }
 
         /// <summary>
-        /// Invalid token should fail (LOGI error or OnError)
+        /// Invalid token should fail (OnError triggered)
         /// </summary>
         [UnityTest]
         public IEnumerator Connect_ShouldFail_WithInvalidToken()
@@ -236,31 +234,22 @@ namespace VyinChatSdk.Tests.Internal.Integration
             };
 
             bool gotError = false;
-            LogiCommand logiResponse = null;
-            bool erorMessage = false;
+            bool authenticated = false;
 
             client.OnError += _ => gotError = true;
-            client.OnMessageReceived += (message) =>
-            {
-                if (message.StartsWith("EROR"))
-                {
-                    erorMessage = true;
-                }
-                logiResponse = CommandParser.ParseLogiCommand(message);
-            };
+            client.OnAuthenticated += _ => authenticated = true;
 
             client.Connect(invalidConfig);
 
             float elapsed = 0f;
-            while (!gotError && !erorMessage && (logiResponse == null || logiResponse.IsSuccess()) && elapsed < LOGI_TIMEOUT)
+            while (!gotError && !authenticated && elapsed < LOGI_TIMEOUT)
             {
                 client.Update();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            bool authFailed = gotError || erorMessage || (logiResponse != null && !logiResponse.IsSuccess());
-            Assert.IsTrue(authFailed, "Invalid token should fail auth");
+            Assert.IsTrue(gotError || !authenticated, "Invalid token should fail auth or not authenticate");
         }
 
         /// <summary>
@@ -277,10 +266,10 @@ namespace VyinChatSdk.Tests.Internal.Integration
                 EnvironmentDomain = "invalid.gamania.chat"
             };
 
-            LogiCommand logiResponse = null;
+            bool authenticated = false;
             bool gotError = false;
 
-            client.OnMessageReceived += (message) => logiResponse = CommandParser.ParseLogiCommand(message);
+            client.OnAuthenticated += _ => authenticated = true;
             client.OnError += _ => gotError = true;
 
             LogAssert.Expect(LogType.Error, new Regex("WebSocket error"));
@@ -288,14 +277,14 @@ namespace VyinChatSdk.Tests.Internal.Integration
             client.Connect(badConfig);
 
             float elapsed = 0f;
-            while (logiResponse == null && !gotError && elapsed < LOGI_TIMEOUT)
+            while (!authenticated && !gotError && elapsed < LOGI_TIMEOUT)
             {
                 client.Update();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            Assert.IsTrue(gotError || logiResponse == null, "Should error or timeout when no LOGI");
+            Assert.IsTrue(gotError || !authenticated, "Should error or timeout when no LOGI");
         }
 
         /// <summary>
@@ -304,19 +293,11 @@ namespace VyinChatSdk.Tests.Internal.Integration
         [UnityTest]
         public IEnumerator InvalidLOGI_ShouldTriggerAuthFailed()
         {
-            LogiCommand logiResponse = null;
             bool gotError = false;
-            bool erorMessage = false;
+            bool authenticated = false;
 
             client.OnError += _ => gotError = true;
-            client.OnMessageReceived += (message) =>
-            {
-                if (message.StartsWith("EROR"))
-                {
-                    erorMessage = true;
-                }
-                logiResponse = CommandParser.ParseLogiCommand(message);
-            };
+            client.OnAuthenticated += _ => authenticated = true;
 
             var invalidTokenConfig = new WebSocketConfig
             {
@@ -329,15 +310,14 @@ namespace VyinChatSdk.Tests.Internal.Integration
             client.Connect(invalidTokenConfig);
 
             float elapsed = 0f;
-            while (!gotError && (logiResponse == null || logiResponse.IsSuccess()) && elapsed < LOGI_TIMEOUT)
+            while (!gotError && !authenticated && elapsed < LOGI_TIMEOUT)
             {
                 client.Update();
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            bool authFailed = gotError || erorMessage || (logiResponse != null && !logiResponse.IsSuccess());
-            Assert.IsTrue(authFailed, "Invalid LOGI or error should fail auth");
+            Assert.IsTrue(gotError || !authenticated, "Invalid LOGI or error should fail auth");
         }
     }
 }

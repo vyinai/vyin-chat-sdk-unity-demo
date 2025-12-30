@@ -26,6 +26,22 @@ namespace VyinChatSdk.Tests.Internal.Domain.Commands
             Assert.IsTrue(cmd.serialized.StartsWith("MESG{"));
             Assert.IsTrue(cmd.serialized.Contains("\"req_id\""));
             Assert.IsTrue(cmd.serialized.Contains("\"text\":\"hello\""));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(cmd.reqId));
+        }
+
+        [Test]
+        public void SendCommand_ShouldIncludeReqId_AndPreservePayload()
+        {
+            var protocol = new CommandProtocol();
+            var payload = new { foo = 1, bar = "baz" };
+
+            var cmd = protocol.BuildCommand(CommandType.FILE, payload);
+
+            Assert.IsTrue(cmd.serialized.StartsWith("FILE{"));
+            StringAssert.Contains("\"foo\":1", cmd.serialized);
+            StringAssert.Contains("\"bar\":\"baz\"", cmd.serialized);
+            StringAssert.Contains("\"req_id\"", cmd.serialized);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(cmd.reqId));
         }
     }
 }

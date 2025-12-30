@@ -1,7 +1,8 @@
 {
     "name": "VyinChatSdk.Tests",
     "references": [
-        "VyinChatSdk"
+        "VyinChatSdk",
+        "Newtonsoft.Json-for-Unity"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
