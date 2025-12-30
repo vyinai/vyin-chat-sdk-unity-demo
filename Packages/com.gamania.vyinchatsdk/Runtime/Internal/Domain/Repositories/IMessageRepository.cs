@@ -1,0 +1,40 @@
+// Domain/Repositories/IMessageRepository.cs
+// Pure C# - No Unity dependencies (KMP-ready)
+
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace VyinChatSdk.Internal.Domain.Repositories
+{
+    /// <summary>
+    /// Message repository interface
+    /// Defines operations for message management
+    /// 100% Pure C#, no Unity dependencies (KMP-ready)
+    /// </summary>
+    public interface IMessageRepository
+    {
+        /// <summary>
+        /// Send a user message to a channel
+        /// Phase 5: Task 5.1, 5.2
+        /// </summary>
+        /// <param name="channelUrl">Channel URL</param>
+        /// <param name="createParams">Message creation parameters</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Sent message object</returns>
+        Task<VcBaseMessage> SendMessageAsync(
+            string channelUrl,
+            VcUserMessageCreateParams createParams,
+            CancellationToken cancellationToken = default);
+    }
+
+    /// <summary>
+    /// User message creation parameters
+    /// For Phase 5
+    /// </summary>
+    public class VcUserMessageCreateParams
+    {
+        public string Message { get; set; }
+        public string Data { get; set; }
+        public string CustomType { get; set; }
+    }
+}
