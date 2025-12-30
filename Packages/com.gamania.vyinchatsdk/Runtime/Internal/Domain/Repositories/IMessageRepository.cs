@@ -26,15 +26,4 @@ namespace VyinChatSdk.Internal.Domain.Repositories
             VcUserMessageCreateParams createParams,
             CancellationToken cancellationToken = default);
     }
-
-    /// <summary>
-    /// User message creation parameters
-    /// For Phase 5
-    /// </summary>
-    public class VcUserMessageCreateParams
-    {
-        public string Message { get; set; }
-        public string Data { get; set; }
-        public string CustomType { get; set; }
-    }
 }

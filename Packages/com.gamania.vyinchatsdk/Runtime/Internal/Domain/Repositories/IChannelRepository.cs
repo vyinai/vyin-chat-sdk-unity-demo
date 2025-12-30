@@ -61,16 +61,4 @@ namespace VyinChatSdk.Internal.Domain.Repositories
             string[] userIds,
             CancellationToken cancellationToken = default);
     }
-
-    /// <summary>
-    /// Channel update parameters
-    /// Placeholder for future phases
-    /// </summary>
-    public class VcGroupChannelUpdateParams
-    {
-        public string Name { get; set; }
-        public string CoverUrl { get; set; }
-        public string Data { get; set; }
-        public string CustomType { get; set; }
-    }
 }
