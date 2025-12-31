@@ -3,7 +3,6 @@
 // Unity WebSocket Client - Integrated ACK Management
 // Concrete implementation using NativeWebSocket library
 // Supports all Unity platforms including WebGL, iOS, Android
-// ACK management integrated similar to iOS SDK's GIMSocketManager
 //
 // -----------------------------------------------------------------------------
 
@@ -124,7 +123,6 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
 
         /// <summary>
         /// Send a command through WebSocket with ACK handling
-        /// Similar to iOS SDK's sendTask(with:ackHandler:)
         /// </summary>
         public async Task<string> SendCommandAsync(
             CommandType commandType,
@@ -147,7 +145,7 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             var timeout = ackTimeout ?? _defaultAckTimeout;
             timeoutCts.CancelAfter(timeout);
 
-            // Register pending ACK - similar to iOS SDK's ackHandlerMap
+            // Register pending ACK
             RegisterPendingAck(reqId, tcs, timeoutCts);
 
             try
@@ -251,7 +249,7 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             OnError?.Invoke(errorMessage);
         }
 
-        // ACK Management - similar to iOS SDK's ACK handling
+        // ACK Management
 
         private void RegisterPendingAck(string reqId, TaskCompletionSource<string> tcs, CancellationTokenSource timeoutCts)
         {
