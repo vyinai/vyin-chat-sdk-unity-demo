@@ -1,7 +1,7 @@
 using VyinChatSdk.Internal.Domain.Commands;
 using NUnit.Framework;
 
-namespace VyinChatSdk.Tests.Internal.Domain.Commands
+namespace VyinChatSdk.Tests.Editor.Internal.Domain.Commands
 {
     public class CommandProtocolTests
     {

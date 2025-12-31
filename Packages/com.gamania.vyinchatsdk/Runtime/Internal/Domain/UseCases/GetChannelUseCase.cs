@@ -1,6 +1,3 @@
-// Domain/UseCases/GetChannelUseCase.cs
-// Pure C# - No Unity dependencies (KMP-ready)
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +8,6 @@ namespace VyinChatSdk.Internal.Domain.UseCases
     /// <summary>
     /// Use case for getting a channel by URL
     /// Phase 3: Task 3.3, 3.4
-    /// 100% Pure C#, no Unity dependencies (KMP-ready)
     /// </summary>
     public class GetChannelUseCase
     {

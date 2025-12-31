@@ -8,7 +8,7 @@
 using NUnit.Framework;
 using VyinChatSdk.Internal.Domain.Commands;
 
-namespace VyinChatSdk.Tests.Internal.Domain.Commands
+namespace VyinChatSdk.Tests.Editor.Internal.Domain.Commands
 {
     public class CommandParserTests
     {

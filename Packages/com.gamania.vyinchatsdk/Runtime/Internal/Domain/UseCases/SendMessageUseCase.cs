@@ -1,6 +1,3 @@
-// Domain/UseCases/SendMessageUseCase.cs
-// Pure C# - No Unity dependencies (KMP-ready)
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +8,6 @@ namespace VyinChatSdk.Internal.Domain.UseCases
     /// <summary>
     /// Use case for sending a message to a channel
     /// Phase 5: Task 5.1, 5.2
-    /// 100% Pure C#, no Unity dependencies (KMP-ready)
     /// </summary>
     public class SendMessageUseCase
     {

@@ -1,4 +1,3 @@
-// Data/Network/IHttpClient.cs
 // HTTP Client abstraction for platform independence
 
 using System;
@@ -14,6 +13,13 @@ namespace VyinChatSdk.Internal.Data.Network
     /// </summary>
     public interface IHttpClient
     {
+        /// <summary>
+        /// Sets the session key for authenticated requests
+        /// Session key will be automatically included in all subsequent requests
+        /// </summary>
+        /// <param name="sessionKey">Session key from authentication</param>
+        void SetSessionKey(string sessionKey);
+
         /// <summary>
         /// Performs a GET request
         /// </summary>
@@ -60,7 +66,6 @@ namespace VyinChatSdk.Internal.Data.Network
 
     /// <summary>
     /// HTTP Response wrapper
-    /// Pure C# data structure (KMP-ready)
     /// </summary>
     public class HttpResponse
     {

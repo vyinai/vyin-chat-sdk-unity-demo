@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 using VyinChatSdk.Internal.Data.Network;
 using VyinChatSdk.Internal.Domain.Commands;
 
-namespace VyinChatSdk.Tests.Internal.Domain.Commands
+namespace VyinChatSdk.Tests.Runtime.Internal.Domain.Commands
 {
     /// <summary>
     /// ACK flow behavior tests using integrated API.

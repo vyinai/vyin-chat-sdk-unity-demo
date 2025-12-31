@@ -17,7 +17,7 @@ using VyinChatSdk.Internal.Domain.Commands;
 using VyinChatSdk.Internal.Platform.Unity.Network;
 using UnityEngine;
 
-namespace VyinChatSdk.Tests.Internal.Integration
+namespace VyinChatSdk.Tests.Runtime.Internal.Integration
 {
     /// <summary>
     /// Integration tests using REAL WebSocket connection

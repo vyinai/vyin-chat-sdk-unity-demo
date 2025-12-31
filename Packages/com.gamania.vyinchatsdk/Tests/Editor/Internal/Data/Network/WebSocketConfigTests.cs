@@ -8,7 +8,7 @@
 using NUnit.Framework;
 using VyinChatSdk.Internal.Data.Network;
 
-namespace VyinChatSdk.Tests.Internal.Data.Network
+namespace VyinChatSdk.Tests.Editor.Internal.Data.Network
 {
     public class WebSocketConfigTests
     {

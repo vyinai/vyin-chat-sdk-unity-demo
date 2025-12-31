@@ -104,6 +104,9 @@ InitTestScene*.unity*
 # VS Code project settings folder
 .vscode/
 
+# Claude Code settings and skills
+.claude/
+
 # Ignore Unity-generated solution files
 *.slnx
 

@@ -1,4 +1,4 @@
-// Tests/Runtime/Domain/GetChannelUseCaseTests.cs
+// Tests/Editor/Internal/Domain/UseCases/GetChannelUseCaseTests.cs
 // Unit tests for GetChannelUseCase
 // Phase 3: Task 3.1 - Test preparation
 
@@ -7,7 +7,7 @@ using System;
 using VyinChatSdk.Internal.Domain.UseCases;
 using VyinChatSdk.Tests.Mocks.Data;
 
-namespace VyinChatSdk.Tests.Internal.Domain.UseCases
+namespace VyinChatSdk.Tests.Editor.Internal.Domain.UseCases
 {
     [TestFixture]
     public class GetChannelUseCaseTests

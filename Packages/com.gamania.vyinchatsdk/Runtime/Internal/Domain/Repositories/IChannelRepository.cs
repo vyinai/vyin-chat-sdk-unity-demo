@@ -1,6 +1,3 @@
-// Domain/Repositories/IChannelRepository.cs
-// Pure C# - No Unity dependencies (KMP-ready)
-
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,7 +6,6 @@ namespace VyinChatSdk.Internal.Domain.Repositories
     /// <summary>
     /// Channel repository interface
     /// Defines operations for channel management
-    /// 100% Pure C#, no Unity dependencies (KMP-ready)
     /// </summary>
     public interface IChannelRepository
     {

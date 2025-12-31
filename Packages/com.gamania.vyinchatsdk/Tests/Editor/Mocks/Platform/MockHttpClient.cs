@@ -17,9 +17,19 @@ namespace VyinChatSdk.Tests.Mocks.Platform
     {
         private readonly Queue<HttpResponse> _responseQueue = new Queue<HttpResponse>();
         private HttpResponse _defaultResponse;
+        private string _sessionKey;
 
         // For verification in tests
         public List<(string method, string url, string body)> RequestHistory { get; } = new List<(string, string, string)>();
+        public string SessionKey => _sessionKey;
+
+        /// <summary>
+        /// Sets the session key for authenticated requests
+        /// </summary>
+        public void SetSessionKey(string sessionKey)
+        {
+            _sessionKey = sessionKey;
+        }
 
         /// <summary>
         /// Queue a response to be returned on next request
@@ -45,6 +55,7 @@ namespace VyinChatSdk.Tests.Mocks.Platform
             _responseQueue.Clear();
             RequestHistory.Clear();
             _defaultResponse = null;
+            _sessionKey = null;
         }
 
         public Task<HttpResponse> GetAsync(

@@ -1,7 +1,3 @@
-// VcException.cs
-// Pure C# - No Unity dependencies (KMP-ready)
-// Public API - Users can catch and handle VcException
-
 using System;
 
 namespace VyinChatSdk
@@ -9,7 +5,6 @@ namespace VyinChatSdk
     /// <summary>
     /// Base exception class for VyinChat SDK
     /// All SDK exceptions should inherit from this class
-    /// 100% Pure C#, no Unity dependencies (KMP-ready)
     /// </summary>
     public class VcException : Exception
     {

@@ -1,7 +1,6 @@
 {
     "name": "VyinChatSdk.Editor.Tests",
     "references": [
-        "VyinChatSdk.Editor",
         "VyinChatSdk"
     ],
     "optionalUnityReferences": [

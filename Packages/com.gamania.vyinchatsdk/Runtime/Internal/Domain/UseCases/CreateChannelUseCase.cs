@@ -1,6 +1,3 @@
-// Domain/UseCases/CreateChannelUseCase.cs
-// Pure C# - No Unity dependencies (KMP-ready)
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +8,6 @@ namespace VyinChatSdk.Internal.Domain.UseCases
     /// <summary>
     /// Use case for creating a group channel
     /// Phase 4: Task 4.1, 4.2
-    /// 100% Pure C#, no Unity dependencies (KMP-ready)
     /// </summary>
     public class CreateChannelUseCase
     {
