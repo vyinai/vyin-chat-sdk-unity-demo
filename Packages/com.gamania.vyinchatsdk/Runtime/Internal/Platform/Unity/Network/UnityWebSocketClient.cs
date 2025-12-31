@@ -1,29 +1,32 @@
 // -----------------------------------------------------------------------------
 //
-// Unity WebSocket Client - Task 1.2
+// Unity WebSocket Client - Integrated ACK Management
 // Concrete implementation using NativeWebSocket library
 // Supports all Unity platforms including WebGL, iOS, Android
 //
 // -----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using NativeWebSocket;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using VyinChatSdk.Internal.Data.Network;
+using VyinChatSdk.Internal.Domain.Commands;
 
 namespace VyinChatSdk.Internal.Platform.Unity.Network
 {
     /// <summary>
     /// Unity WebSocket client implementation using NativeWebSocket
     /// Supports WebGL, iOS, Android, and all Unity platforms
+    /// Includes integrated ACK management
     /// </summary>
     public class UnityWebSocketClient : IWebSocketClient
     {
         public event Action OnConnected;
         public event Action OnDisconnected;
-        public event Action<string> OnMessageReceived;
+        public event Action<CommandType, string> OnCommandReceived;
         public event Action<string> OnAuthenticated;
         public event Action<string> OnError;
 
@@ -34,6 +37,12 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
         private string _sessionKey;
         private CancellationTokenSource _authTimeoutCts;
         private readonly TimeSpan _authTimeout = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _defaultAckTimeout = TimeSpan.FromSeconds(5);
+
+        // ACK management
+        private readonly Dictionary<string, PendingAck> _pendingAcks = new Dictionary<string, PendingAck>();
+        private readonly object _ackLock = new object();
+        private readonly ICommandProtocol _commandProtocol = new CommandProtocol();
 
         /// <summary>
         /// Connect to WebSocket server with configuration
@@ -99,6 +108,7 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             {
                 Debug.Log("[UnityWebSocketClient] Disconnecting");
                 CancelAuthTimeout();
+                ClearAllPendingAcks();
 
                 try
                 {
@@ -112,28 +122,50 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
         }
 
         /// <summary>
-        /// Send a message through WebSocket
+        /// Send a command through WebSocket with ACK handling
         /// </summary>
-        public void Send(string message)
+        public async Task<string> SendCommandAsync(
+            CommandType commandType,
+            object payload,
+            TimeSpan? ackTimeout = null,
+            CancellationToken cancellationToken = default)
         {
-            if (_webSocket == null || _webSocket.State != WebSocketState.Open)
+            var (reqId, serialized) = _commandProtocol.BuildCommand(commandType, payload);
+
+            // If command doesn't require ACK, send immediately and return
+            if (!commandType.IsAckRequired())
             {
-                string error = "Cannot send message: WebSocket is not connected";
-                Debug.LogError($"[UnityWebSocketClient] {error}");
-                OnError?.Invoke(error);
-                return;
+                SendRaw(serialized);
+                return null;
             }
+
+            // Create task completion source for ACK
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var timeout = ackTimeout ?? _defaultAckTimeout;
+            timeoutCts.CancelAfter(timeout);
+
+            // Register pending ACK
+            RegisterPendingAck(reqId, tcs, timeoutCts);
 
             try
             {
-                _ = _webSocket.SendText(message);
-                Debug.Log($"[UnityWebSocketClient] Sent: {message}");
+                SendRaw(serialized);
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.LogError($"[UnityWebSocketClient] Send exception: {ex.Message}");
-                OnError?.Invoke($"Send failed: {ex.Message}");
+                // If send fails immediately, clean up pending ACK
+                CompletePendingAck(reqId, null, cancelTimeout: true);
+                throw;
             }
+
+            // Register timeout callback
+            timeoutCts.Token.Register(() =>
+            {
+                CompletePendingAck(reqId, null, cancelTimeout: false);
+            });
+
+            return await tcs.Task;
         }
 
         /// <summary>
@@ -159,6 +191,7 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
         {
             Debug.Log($"[UnityWebSocketClient] Connection closed: {closeCode}");
             CancelAuthTimeout();
+            ClearAllPendingAcks();
             OnDisconnected?.Invoke();
         }
 
@@ -169,29 +202,38 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 string message = System.Text.Encoding.UTF8.GetString(data);
                 Debug.Log($"[UnityWebSocketClient] Received: {message}");
 
-                // Handle LOGI / authentication
-                var logi = VyinChatSdk.Internal.Domain.Commands.CommandParser.ParseLogiCommand(message);
-                if (logi != null)
+                // Parse command type
+                var commandType = CommandParser.ExtractCommandType(message);
+                if (commandType == null)
                 {
-                    if (logi.IsSuccess())
-                    {
-                        _sessionKey = logi.SessionKey;
-                        CancelAuthTimeout();
-                        OnAuthenticated?.Invoke(_sessionKey);
-                    }
-                    else
-                    {
-                        CancelAuthTimeout();
-                        OnError?.Invoke("Authentication failed (LOGI error).");
-                    }
+                    Debug.LogWarning($"[UnityWebSocketClient] Failed to parse command type from: {message}");
+                    return;
                 }
-                else if (message.StartsWith("EROR", StringComparison.Ordinal))
+
+                var payload = CommandParser.ExtractPayload(message);
+
+                // Handle LOGI / Authentication
+                if (commandType == CommandType.LOGI)
+                {
+                    HandleLogiCommand(message, payload);
+                }
+                // Handle MACK - Acknowledgement
+                else if (commandType == CommandType.MACK)
+                {
+                    HandleMackCommand(payload);
+                }
+                // Handle EROR - Error
+                else if (commandType == CommandType.EROR)
                 {
                     CancelAuthTimeout();
                     OnError?.Invoke("Authentication failed (EROR message).");
+                    OnCommandReceived?.Invoke(commandType.Value, payload);
                 }
-
-                OnMessageReceived?.Invoke(message);
+                // All other commands - Dispatch as event
+                else
+                {
+                    OnCommandReceived?.Invoke(commandType.Value, payload);
+                }
             }
             catch (Exception ex)
             {
@@ -205,6 +247,138 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             Debug.LogError($"[UnityWebSocketClient] WebSocket error: {errorMessage}");
             CancelAuthTimeout();
             OnError?.Invoke(errorMessage);
+        }
+
+        // ACK Management
+
+        private void RegisterPendingAck(string reqId, TaskCompletionSource<string> tcs, CancellationTokenSource timeoutCts)
+        {
+            lock (_ackLock)
+            {
+                if (_pendingAcks.ContainsKey(reqId))
+                {
+                    throw new InvalidOperationException($"Duplicate reqId registration: {reqId}");
+                }
+                _pendingAcks.Add(reqId, new PendingAck(tcs, timeoutCts));
+            }
+        }
+
+        private bool CompletePendingAck(string reqId, string ackPayload, bool cancelTimeout)
+        {
+            PendingAck ack;
+            lock (_ackLock)
+            {
+                if (!_pendingAcks.TryGetValue(reqId, out ack))
+                {
+                    return false;
+                }
+                _pendingAcks.Remove(reqId);
+            }
+
+            if (cancelTimeout)
+            {
+                ack.TimeoutCts.Cancel();
+            }
+
+            ack.Tcs.TrySetResult(ackPayload);
+            ack.Dispose();
+            return true;
+        }
+
+        private void ClearAllPendingAcks()
+        {
+            lock (_ackLock)
+            {
+                foreach (var ack in _pendingAcks.Values)
+                {
+                    ack.TimeoutCts.Cancel();
+                    ack.Tcs.TrySetCanceled();
+                    ack.Dispose();
+                }
+                _pendingAcks.Clear();
+            }
+        }
+
+        private void HandleMackCommand(string payload)
+        {
+            var reqId = ExtractReqId(payload);
+            if (string.IsNullOrWhiteSpace(reqId))
+            {
+                Debug.LogWarning("[UnityWebSocketClient] MACK received without req_id");
+                return;
+            }
+
+            bool completed = CompletePendingAck(reqId, payload, cancelTimeout: true);
+            if (!completed)
+            {
+                Debug.LogWarning($"[UnityWebSocketClient] MACK received for unknown reqId: {reqId}");
+            }
+        }
+
+        private void HandleLogiCommand(string message, string payload)
+        {
+            var logi = CommandParser.ParseLogiCommand(message);
+            if (logi != null)
+            {
+                if (logi.IsSuccess())
+                {
+                    _sessionKey = logi.SessionKey;
+                    CancelAuthTimeout();
+                    OnAuthenticated?.Invoke(_sessionKey);
+                }
+                else
+                {
+                    CancelAuthTimeout();
+                    OnError?.Invoke("Authentication failed (LOGI error).");
+                }
+            }
+        }
+
+        private static string ExtractReqId(string payload)
+        {
+            if (string.IsNullOrEmpty(payload))
+            {
+                return null;
+            }
+
+            const string key = "\"req_id\":\"";
+            var start = payload.IndexOf(key, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                return null;
+            }
+
+            start += key.Length;
+            var end = payload.IndexOf('"', start);
+            if (end < 0 || end <= start)
+            {
+                return null;
+            }
+
+            return payload.Substring(start, end - start);
+        }
+
+        private void SendRaw(string message)
+        {
+            if (_webSocket == null || _webSocket.State != WebSocketState.Open)
+            {
+                string error = "Cannot send message: WebSocket is not connected";
+                Debug.LogError($"[UnityWebSocketClient] {error}");
+                OnError?.Invoke(error);
+                throw new InvalidOperationException(error);
+            }
+
+            try
+            {
+                _ = _webSocket.SendText(message);
+                Debug.Log($"[UnityWebSocketClient] Sent: {message}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[UnityWebSocketClient] Send exception: {ex.Message}");
+                OnError?.Invoke($"Send failed: {ex.Message}");
+                throw;
+            }
         }
 
         private void StartAuthTimeout()
@@ -237,6 +411,23 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 _authTimeoutCts.Cancel();
                 _authTimeoutCts.Dispose();
                 _authTimeoutCts = null;
+            }
+        }
+
+        private sealed class PendingAck : IDisposable
+        {
+            public TaskCompletionSource<string> Tcs { get; }
+            public CancellationTokenSource TimeoutCts { get; }
+
+            public PendingAck(TaskCompletionSource<string> tcs, CancellationTokenSource timeoutCts)
+            {
+                Tcs = tcs;
+                TimeoutCts = timeoutCts;
+            }
+
+            public void Dispose()
+            {
+                TimeoutCts.Dispose();
             }
         }
     }

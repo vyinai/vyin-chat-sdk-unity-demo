@@ -1,10 +1,14 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
+using VyinChatSdk.Internal.Domain.Commands;
 
 namespace VyinChatSdk.Internal.Data.Network
 {
     /// <summary>
     /// WebSocket client interface for Data layer
     /// Platform-agnostic interface following Clean Architecture principles
+    /// Includes ACK management similar to iOS SDK's GIMSocketManager
     /// </summary>
     public interface IWebSocketClient
     {
@@ -19,9 +23,10 @@ namespace VyinChatSdk.Internal.Data.Network
         event Action OnDisconnected;
 
         /// <summary>
-        /// Event triggered when a message is received
+        /// Event triggered when a non-ACK command is received (MESG, FILE, SYEV, etc.)
+        /// Parameters: (commandType, payload)
         /// </summary>
-        event Action<string> OnMessageReceived;
+        event Action<CommandType, string> OnCommandReceived;
 
         /// <summary>
         /// Event triggered when an error occurs
@@ -45,10 +50,20 @@ namespace VyinChatSdk.Internal.Data.Network
         void Disconnect();
 
         /// <summary>
-        /// Send a message through WebSocket
+        /// Send a command through WebSocket with ACK handling
+        /// If the command requires ACK, waits for MACK or timeout
+        /// Returns the ACK payload if successful, null if timeout or command doesn't require ACK
         /// </summary>
-        /// <param name="message">Message to send</param>
-        void Send(string message);
+        /// <param name="commandType">Type of command to send</param>
+        /// <param name="payload">Command payload object</param>
+        /// <param name="ackTimeout">Custom timeout duration (optional)</param>
+        /// <param name="cancellationToken">Cancellation token (optional)</param>
+        /// <returns>ACK payload if successful, null otherwise</returns>
+        Task<string> SendCommandAsync(
+            CommandType commandType,
+            object payload,
+            TimeSpan? ackTimeout = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Update method to process WebSocket events (call from Unity Update loop)

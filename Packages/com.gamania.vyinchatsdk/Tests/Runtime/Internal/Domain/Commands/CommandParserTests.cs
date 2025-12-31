@@ -66,5 +66,25 @@ namespace VyinChatSdk.Tests.Internal.Domain.Commands
 
             Assert.IsNull(result);
         }
+
+        [Test]
+        public void ExtractCommandType_Mack_ShouldReturnMACK()
+        {
+            string message = "MACK{\"req_id\":\"abc\"}";
+
+            var result = CommandParser.ExtractCommandType(message);
+
+            Assert.AreEqual(CommandType.MACK, result);
+        }
+
+        [Test]
+        public void ExtractPayload_ShouldReturnPayloadPart()
+        {
+            string message = "MESG{\"req_id\":\"123\",\"text\":\"hi\"}";
+
+            var payload = CommandParser.ExtractPayload(message);
+
+            Assert.AreEqual("{\"req_id\":\"123\",\"text\":\"hi\"}", payload);
+        }
     }
 }
