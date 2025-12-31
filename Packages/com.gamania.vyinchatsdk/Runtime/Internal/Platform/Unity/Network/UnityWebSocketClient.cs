@@ -40,7 +40,7 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
         private readonly TimeSpan _authTimeout = TimeSpan.FromSeconds(10);
         private readonly TimeSpan _defaultAckTimeout = TimeSpan.FromSeconds(5);
 
-        // ACK management - similar to iOS SDK's ackHandlerMap
+        // ACK management
         private readonly Dictionary<string, PendingAck> _pendingAcks = new Dictionary<string, PendingAck>();
         private readonly object _ackLock = new object();
         private readonly ICommandProtocol _commandProtocol = new CommandProtocol();
