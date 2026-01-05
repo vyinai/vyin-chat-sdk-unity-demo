@@ -1,6 +1,3 @@
-// Tests/Runtime/Platform/MockHttpClient.cs
-// Mock HTTP Client for testing
-
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -10,8 +7,7 @@ using VyinChatSdk.Internal.Data.Network;
 namespace VyinChatSdk.Tests.Mocks.Platform
 {
     /// <summary>
-    /// Mock HTTP Client for testing Phase 3
-    /// Allows you to develop without waiting for Phase 1-2
+    /// Mock implementation of HTTP client for testing
     /// </summary>
     public class MockHttpClient : IHttpClient
     {
@@ -19,12 +15,11 @@ namespace VyinChatSdk.Tests.Mocks.Platform
         private HttpResponse _defaultResponse;
         private string _sessionKey;
 
-        // For verification in tests
-        public List<(string method, string url, string body)> RequestHistory { get; } = new List<(string, string, string)>();
+        public List<(string method, string url, string body, Dictionary<string, string> headers)> RequestHistory { get; } = new();
         public string SessionKey => _sessionKey;
 
         /// <summary>
-        /// Sets the session key for authenticated requests
+        /// Sets the session key that will be included in request headers
         /// </summary>
         public void SetSessionKey(string sessionKey)
         {
@@ -32,7 +27,7 @@ namespace VyinChatSdk.Tests.Mocks.Platform
         }
 
         /// <summary>
-        /// Queue a response to be returned on next request
+        /// Adds a response to the queue that will be returned for the next request
         /// </summary>
         public void QueueResponse(HttpResponse response)
         {
@@ -40,7 +35,7 @@ namespace VyinChatSdk.Tests.Mocks.Platform
         }
 
         /// <summary>
-        /// Set default response for all requests
+        /// Sets the default response to return when the queue is empty
         /// </summary>
         public void SetDefaultResponse(HttpResponse response)
         {
@@ -48,7 +43,7 @@ namespace VyinChatSdk.Tests.Mocks.Platform
         }
 
         /// <summary>
-        /// Clear all queued responses and history
+        /// Clears all queued responses, request history, and resets the session key
         /// </summary>
         public void Reset()
         {
@@ -63,7 +58,8 @@ namespace VyinChatSdk.Tests.Mocks.Platform
             Dictionary<string, string> headers = null,
             CancellationToken cancellationToken = default)
         {
-            RequestHistory.Add(("GET", url, null));
+            var allHeaders = MergeHeaders(headers);
+            RequestHistory.Add(("GET", url, null, allHeaders));
             return Task.FromResult(GetNextResponse());
         }
 
@@ -73,7 +69,8 @@ namespace VyinChatSdk.Tests.Mocks.Platform
             Dictionary<string, string> headers = null,
             CancellationToken cancellationToken = default)
         {
-            RequestHistory.Add(("POST", url, body));
+            var allHeaders = MergeHeaders(headers);
+            RequestHistory.Add(("POST", url, body, allHeaders));
             return Task.FromResult(GetNextResponse());
         }
 
@@ -83,7 +80,8 @@ namespace VyinChatSdk.Tests.Mocks.Platform
             Dictionary<string, string> headers = null,
             CancellationToken cancellationToken = default)
         {
-            RequestHistory.Add(("PUT", url, body));
+            var allHeaders = MergeHeaders(headers);
+            RequestHistory.Add(("PUT", url, body, allHeaders));
             return Task.FromResult(GetNextResponse());
         }
 
@@ -92,8 +90,31 @@ namespace VyinChatSdk.Tests.Mocks.Platform
             Dictionary<string, string> headers = null,
             CancellationToken cancellationToken = default)
         {
-            RequestHistory.Add(("DELETE", url, null));
+            var allHeaders = MergeHeaders(headers);
+            RequestHistory.Add(("DELETE", url, null, allHeaders));
             return Task.FromResult(GetNextResponse());
+        }
+
+        private Dictionary<string, string> MergeHeaders(Dictionary<string, string> headers)
+        {
+            var result = new Dictionary<string, string>();
+
+            // Add session key if set
+            if (!string.IsNullOrEmpty(_sessionKey))
+            {
+                result["Session-Key"] = _sessionKey;
+            }
+
+            // Add custom headers
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    result[header.Key] = header.Value;
+                }
+            }
+
+            return result;
         }
 
         private HttpResponse GetNextResponse()
@@ -119,7 +140,7 @@ namespace VyinChatSdk.Tests.Mocks.Platform
     }
 
     /// <summary>
-    /// Helper class to build HttpResponse for tests
+    /// Provides helper methods to create common HTTP response objects for testing
     /// </summary>
     public static class MockHttpResponseBuilder
     {

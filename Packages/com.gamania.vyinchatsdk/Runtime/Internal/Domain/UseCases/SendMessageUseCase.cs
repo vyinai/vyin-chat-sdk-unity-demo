@@ -51,7 +51,7 @@ namespace VyinChatSdk.Internal.Domain.UseCases
             if (string.IsNullOrWhiteSpace(createParams.Message))
             {
                 throw new VcException(
-                    VcErrorCode.InvalidMessage,
+                    VcErrorCode.InvalidParameterValueRequired,
                     "Message text cannot be null or empty",
                     "createParams.Message");
             }
@@ -64,7 +64,7 @@ namespace VyinChatSdk.Internal.Domain.UseCases
                 if (sentMessage == null)
                 {
                     throw new VcException(
-                        VcErrorCode.MessageSendFailed,
+                        VcErrorCode.RequestFailed,
                         "Failed to send message - repository returned null");
                 }
 
@@ -79,7 +79,7 @@ namespace VyinChatSdk.Internal.Domain.UseCases
             {
                 // Wrap other exceptions in VcException
                 throw new VcException(
-                    VcErrorCode.MessageSendFailed,
+                    VcErrorCode.RequestFailed,
                     "Failed to send message",
                     channelUrl,
                     ex);

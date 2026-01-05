@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using VyinChatSdk.Internal.Domain.Mappers;
 using VyinChatSdk.Internal.Domain.Repositories;
 
 namespace VyinChatSdk.Internal.Domain.UseCases
 {
     /// <summary>
-    /// Use case for getting a channel by URL
-    /// Phase 3: Task 3.3, 3.4
+    /// Retrieves channel information by URL
     /// </summary>
     public class GetChannelUseCase
     {
@@ -19,12 +19,12 @@ namespace VyinChatSdk.Internal.Domain.UseCases
         }
 
         /// <summary>
-        /// Execute the use case - Get channel by URL
+        /// Retrieves a channel by its URL
         /// </summary>
-        /// <param name="channelUrl">Channel URL</param>
+        /// <param name="channelUrl">The URL of the channel to retrieve</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>VcGroupChannel object</returns>
-        /// <exception cref="VcException">If validation fails or channel not found</exception>
+        /// <returns>The channel information</returns>
+        /// <exception cref="VcException">Thrown when the channel URL is invalid or the channel is not found</exception>
         public async Task<VcGroupChannel> ExecuteAsync(
             string channelUrl,
             CancellationToken cancellationToken = default)
@@ -38,12 +38,11 @@ namespace VyinChatSdk.Internal.Domain.UseCases
                     "channelUrl");
             }
 
-            // Execute repository call
             try
             {
-                var channel = await _channelRepository.GetChannelAsync(channelUrl, cancellationToken);
+                var channelBo = await _channelRepository.GetChannelAsync(channelUrl, cancellationToken);
 
-                if (channel == null)
+                if (channelBo == null)
                 {
                     throw new VcException(
                         VcErrorCode.ChannelNotFound,
@@ -51,16 +50,14 @@ namespace VyinChatSdk.Internal.Domain.UseCases
                         channelUrl);
                 }
 
-                return channel;
+                return ChannelBoMapper.ToPublicModel(channelBo);
             }
             catch (VcException)
             {
-                // Re-throw VcException as is
                 throw;
             }
             catch (Exception ex)
             {
-                // Wrap other exceptions in VcException
                 throw new VcException(
                     VcErrorCode.Unknown,
                     "Failed to get channel",

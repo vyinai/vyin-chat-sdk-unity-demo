@@ -1,58 +1,63 @@
 using System.Threading;
 using System.Threading.Tasks;
+using VyinChatSdk.Internal.Domain.Models;
 
 namespace VyinChatSdk.Internal.Domain.Repositories
 {
     /// <summary>
-    /// Channel repository interface
-    /// Defines operations for channel management
+    /// Repository interface for channel data access operations
     /// </summary>
     public interface IChannelRepository
     {
         /// <summary>
-        /// Get a channel by URL
-        /// Phase 3: Task 3.3, 3.4
+        /// Retrieves a channel by its URL
         /// </summary>
-        /// <param name="channelUrl">Channel URL</param>
+        /// <param name="channelUrl">The URL of the channel to retrieve</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>VcGroupChannel object</returns>
-        Task<VcGroupChannel> GetChannelAsync(
+        /// <returns>The channel data</returns>
+        Task<ChannelBO> GetChannelAsync(
             string channelUrl,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Create a group channel
-        /// Phase 4: Task 4.1, 4.2
+        /// Creates a new group channel
         /// </summary>
-        /// <param name="createParams">Channel creation parameters</param>
+        /// <param name="createParams">Parameters for channel creation</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Created VcGroupChannel</returns>
-        Task<VcGroupChannel> CreateChannelAsync(
+        /// <returns>The created channel data</returns>
+        Task<ChannelBO> CreateChannelAsync(
             VcGroupChannelCreateParams createParams,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Update a channel
-        /// Future: Phase 7+
+        /// Updates an existing channel's properties
         /// </summary>
-        Task<VcGroupChannel> UpdateChannelAsync(
+        /// <param name="channelUrl">The URL of the channel to update</param>
+        /// <param name="updateParams">Parameters for channel update</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The updated channel data</returns>
+        Task<ChannelBO> UpdateChannelAsync(
             string channelUrl,
             VcGroupChannelUpdateParams updateParams,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Delete a channel
-        /// Future: Phase 7+
+        /// Deletes a channel
         /// </summary>
+        /// <param name="channelUrl">The URL of the channel to delete</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         Task DeleteChannelAsync(
             string channelUrl,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Invite users to a channel
-        /// Future: Phase 7+
+        /// Invites users to join a channel
         /// </summary>
-        Task<VcGroupChannel> InviteUsersAsync(
+        /// <param name="channelUrl">The URL of the channel</param>
+        /// <param name="userIds">Array of user IDs to invite</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The updated channel data</returns>
+        Task<ChannelBO> InviteUsersAsync(
             string channelUrl,
             string[] userIds,
             CancellationToken cancellationToken = default);

@@ -1,6 +1,3 @@
-// HTTP Client abstraction for platform independence
-
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,38 +59,5 @@ namespace VyinChatSdk.Internal.Data.Network
             string url,
             Dictionary<string, string> headers = null,
             CancellationToken cancellationToken = default);
-    }
-
-    /// <summary>
-    /// HTTP Response wrapper
-    /// </summary>
-    public class HttpResponse
-    {
-        public int StatusCode { get; set; }
-        public string Body { get; set; }
-        public Dictionary<string, string> Headers { get; set; }
-        public bool IsSuccess => StatusCode >= 200 && StatusCode < 300;
-        public string Error { get; set; }
-
-        public HttpResponse()
-        {
-            Headers = new Dictionary<string, string>();
-        }
-    }
-
-    /// <summary>
-    /// HTTP Client exception
-    /// </summary>
-    public class HttpClientException : Exception
-    {
-        public int StatusCode { get; }
-        public string ResponseBody { get; }
-
-        public HttpClientException(string message, int statusCode, string responseBody)
-            : base(message)
-        {
-            StatusCode = statusCode;
-            ResponseBody = responseBody;
-        }
     }
 }

@@ -8,6 +8,14 @@ namespace VyinChatSdk
     {
         public string ChannelUrl { get; set; }
         public string Name { get; set; }
+        public long CreatedAt { get; set; }
+        public VcBaseMessage LastMessage { get; set; }
+        public List<VcUser> Members { get; set; }
+        public int MemberCount { get; set; }
+        public string Data { get; set; }
+        public string CoverUrl { get; set; }
+        public string CustomType { get; set; }
+
 
         private static readonly Dictionary<string, VcGroupChannelHandler> _handlers = new();
 

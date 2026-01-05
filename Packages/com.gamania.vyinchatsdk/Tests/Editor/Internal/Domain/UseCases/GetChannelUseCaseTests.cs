@@ -34,20 +34,19 @@ namespace VyinChatSdk.Tests.Editor.Internal.Domain.UseCases
         public void ExecuteAsync_ValidChannelUrl_ReturnsChannel()
         {
             // Arrange
-            var expectedChannel = new VcGroupChannel
+            _mockRepository.AddChannel(new VyinChatSdk.Internal.Domain.Models.ChannelBO
             {
                 ChannelUrl = "test_channel_url",
                 Name = "Test Channel"
-            };
-            _mockRepository.AddChannel(expectedChannel);
+            });
 
             // Act
             var result = _useCase.ExecuteAsync("test_channel_url").GetAwaiter().GetResult();
 
             // Assert
             Assert.IsNotNull(result);
-            Assert.AreEqual(expectedChannel.ChannelUrl, result.ChannelUrl);
-            Assert.AreEqual(expectedChannel.Name, result.Name);
+            Assert.AreEqual("test_channel_url", result.ChannelUrl);
+            Assert.AreEqual("Test Channel", result.Name);
             Assert.AreEqual(1, _mockRepository.OperationHistory.Count);
             Assert.AreEqual("GetChannel", _mockRepository.OperationHistory[0].operation);
         }

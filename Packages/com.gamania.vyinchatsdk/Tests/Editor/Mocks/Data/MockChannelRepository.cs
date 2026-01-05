@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using VyinChatSdk.Internal.Domain.Models;
 using VyinChatSdk.Internal.Domain.Repositories;
 
 namespace VyinChatSdk.Tests.Mocks.Data
@@ -15,7 +16,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
     /// </summary>
     public class MockChannelRepository : IChannelRepository
     {
-        private readonly Dictionary<string, VcGroupChannel> _channels = new Dictionary<string, VcGroupChannel>();
+        private readonly Dictionary<string, ChannelBO> _channels = new Dictionary<string, ChannelBO>();
         private Exception _exceptionToThrow;
 
         // For verification in tests
@@ -24,7 +25,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
         /// <summary>
         /// Add a channel to the mock database
         /// </summary>
-        public void AddChannel(VcGroupChannel channel)
+        public void AddChannel(ChannelBO channel)
         {
             if (channel != null && !string.IsNullOrEmpty(channel.ChannelUrl))
             {
@@ -50,7 +51,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
             _exceptionToThrow = null;
         }
 
-        public Task<VcGroupChannel> GetChannelAsync(
+        public Task<ChannelBO> GetChannelAsync(
             string channelUrl,
             CancellationToken cancellationToken = default)
         {
@@ -67,7 +68,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
             return Task.FromResult(channel);
         }
 
-        public Task<VcGroupChannel> CreateChannelAsync(
+        public Task<ChannelBO> CreateChannelAsync(
             VcGroupChannelCreateParams createParams,
             CancellationToken cancellationToken = default)
         {
@@ -81,7 +82,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
             }
 
             // Create a fake channel
-            var channel = new VcGroupChannel
+            var channel = new ChannelBO
             {
                 ChannelUrl = $"mock_channel_{Guid.NewGuid()}",
                 Name = createParams.Name ?? "Mock Channel"
@@ -91,7 +92,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
             return Task.FromResult(channel);
         }
 
-        public Task<VcGroupChannel> UpdateChannelAsync(
+        public Task<ChannelBO> UpdateChannelAsync(
             string channelUrl,
             VcGroupChannelUpdateParams updateParams,
             CancellationToken cancellationToken = default)
@@ -113,7 +114,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
                 return Task.FromResult(channel);
             }
 
-            return Task.FromResult<VcGroupChannel>(null);
+            return Task.FromResult<ChannelBO>(null);
         }
 
         public Task DeleteChannelAsync(
@@ -133,7 +134,7 @@ namespace VyinChatSdk.Tests.Mocks.Data
             return Task.CompletedTask;
         }
 
-        public Task<VcGroupChannel> InviteUsersAsync(
+        public Task<ChannelBO> InviteUsersAsync(
             string channelUrl,
             string[] userIds,
             CancellationToken cancellationToken = default)

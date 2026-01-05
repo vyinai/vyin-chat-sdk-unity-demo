@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using VyinChatSdk.Internal.Domain.Mappers;
 using VyinChatSdk.Internal.Domain.Repositories;
 
 namespace VyinChatSdk.Internal.Domain.UseCases
 {
     /// <summary>
-    /// Use case for creating a group channel
-    /// Phase 4: Task 4.1, 4.2
+    /// Handles the creation of a new group channel, including input validation and repository interaction.
     /// </summary>
     public class CreateChannelUseCase
     {
@@ -19,7 +19,7 @@ namespace VyinChatSdk.Internal.Domain.UseCases
         }
 
         /// <summary>
-        /// Execute the use case - Create a group channel
+        /// Asynchronously creates a new group channel based on the provided parameters.
         /// </summary>
         /// <param name="createParams">Channel creation parameters</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -49,16 +49,13 @@ namespace VyinChatSdk.Internal.Domain.UseCases
             // Execute repository call
             try
             {
-                var channel = await _channelRepository.CreateChannelAsync(createParams, cancellationToken);
-
-                if (channel == null)
-                {
-                    throw new VcException(
-                        VcErrorCode.ChannelCreationFailed,
+                var channelBo = await _channelRepository.CreateChannelAsync(createParams, cancellationToken)
+                ?? throw new VcException(
+                        VcErrorCode.Unknown,
                         "Failed to create channel - repository returned null");
-                }
 
-                return channel;
+                // Convert BO to Public Model
+                return ChannelBoMapper.ToPublicModel(channelBo);
             }
             catch (VcException)
             {
@@ -69,7 +66,7 @@ namespace VyinChatSdk.Internal.Domain.UseCases
             {
                 // Wrap other exceptions in VcException
                 throw new VcException(
-                    VcErrorCode.ChannelCreationFailed,
+                    VcErrorCode.Unknown,
                     "Failed to create channel",
                     ex);
             }
