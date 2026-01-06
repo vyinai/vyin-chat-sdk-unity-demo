@@ -22,7 +22,7 @@ namespace VyinChatSdk.Internal
             }
         }
 
-        public void Connect(string userId, string authToken, VcUserHandler callback)
+        public void Connect(string userId, string authToken, string apiHost, string wsHost, VcUserHandler callback)
         {
             try
             {

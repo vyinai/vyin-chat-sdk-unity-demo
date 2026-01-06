@@ -54,19 +54,28 @@ public class ChatDemoController : MonoBehaviour
         try
         {
             // 根據環境設定配置
-            ConfigureEnvironment();
+            string domain = GetDomainForEnvironment(environment);
+            string actualAppId = GetAppIdForEnvironment(environment, appId);
+            AppendLogText($"[ChatDemo] Environment: {environment}");
+            AppendLogText($"[ChatDemo] Domain: {domain}");
+            AppendLogText($"[ChatDemo] AppId: {actualAppId}");
+            // Legacy implementations use VyinChat.SetConfiguration
+            // Pure C# implementation uses Connect with explicit hosts
+            VyinChat.SetConfiguration(actualAppId, domain);
 
             // 初始化 VyinChat SDK
             AppendLogText("[ChatDemo] Initializing VyinChat...");
-            string actualAppId = GetAppIdForEnvironment();
             VcInitParams initParams = new VcInitParams(actualAppId);
             VyinChat.Init(initParams);
 
             // 連線 VyinChat
             AppendLogText($"[ChatDemo] Connecting as '{userId}'...");
             string token = string.IsNullOrEmpty(authToken) ? null : authToken;
-
-            VyinChat.Connect(userId, token, (inUser, inError) =>
+            string apiHost = $"https://{actualAppId}.{domain}";
+            string wsHost = $"wss://{actualAppId}.{domain}";
+            AppendLogText($"[ChatDemo] API Host: {apiHost}");
+            AppendLogText($"[ChatDemo] WS Host: {wsHost}");
+            VyinChat.Connect(userId, token, apiHost, wsHost, (inUser, inError) =>
             {
                 if (!string.IsNullOrEmpty(inError))
                 {
@@ -157,6 +166,19 @@ public class ChatDemoController : MonoBehaviour
 
             currentChannelUrl = channel.ChannelUrl;
             AppendLogText($"[ChatDemo] Channel created: '{channel.Name}', ChannelUrl: '{currentChannelUrl}'");
+
+            // VcGroupChannelModule.GetGroupChannel(currentChannelUrl, (retrievedChannel, getError) =>
+            // {
+            //     if (!string.IsNullOrEmpty(getError))
+            //     {
+            //         AppendLogText($"[ChatDemo] GetChannel failed: {getError}");
+            //         return;
+            //     }
+
+            //     AppendLogText($"[ChatDemo] GetChannel success!");
+            //     AppendLogText($"  - Channel URL: {retrievedChannel.ChannelUrl}");
+            //     AppendLogText($"  - Name: {retrievedChannel.Name}");
+            //     AppendLogText($"  - Members: {retrievedChannel.MemberCount}");
             AppendLogText("──────────────────────────────");
             AppendLogText("AI ChatBot connected! Please enter a message above to start chatting.");
 
@@ -165,36 +187,10 @@ public class ChatDemoController : MonoBehaviour
             {
                 SendTestMessage(currentChannelUrl);
             }
+            // });
         }
 
         VcGroupChannelModule.CreateGroupChannel(channelCreateParams, channelCreateCallback);
-
-        // VcGroupChannelModule.CreateGroupChannel(channelCreateParams, (result, error) =>
-        // {
-        //     if (!string.IsNullOrEmpty(error))
-        //     {
-        //         Log("[ChatDemo] Failed to create channel: " + error);
-        //         return;
-        //     }
-
-        //     // 解析 channelUrl
-        //     currentChannelUrl = ExtractChannelUrl(result);
-        //     if (!string.IsNullOrEmpty(currentChannelUrl))
-        //     {
-        //         Log($"[ChatDemo] Channel created: '{channelName}', ChannelUrl: '{currentChannelUrl}'");
-        //         Log($"[ChatDemo] Members: {string.Join(", ", allMembers)}");
-
-        //         // 發送測試訊息
-        //         if (autoTest)
-        //         {
-        //             SendTestMessage(currentChannelUrl);
-        //         }
-        //     }
-        //     else
-        //     {
-        //         Log("[WARNING] Channel created but failed to get URL");
-        //     }
-        // });
     }
 
     private void SendTestMessage(string channelUrl)
@@ -277,22 +273,10 @@ public class ChatDemoController : MonoBehaviour
     }
 
     // MARK: Helper Methods
-    private void ConfigureEnvironment()
+
+    private static string GetDomainForEnvironment(Environment env)
     {
-        string domain = GetDomainForEnvironment();
-        string envAppId = GetAppIdForEnvironment();
-
-        AppendLogText($"[ChatDemo] Environment: {environment}");
-        AppendLogText($"[ChatDemo] Domain: {domain}");
-        AppendLogText($"[ChatDemo] AppId: {envAppId}");
-
-        // 設定環境配置
-        VyinChat.SetConfiguration(envAppId, domain);
-    }
-
-    private string GetDomainForEnvironment()
-    {
-        switch (environment)
+        switch (env)
         {
             case Environment.PROD:
                 return "gamania.chat";
@@ -307,16 +291,14 @@ public class ChatDemoController : MonoBehaviour
         }
     }
 
-    private string GetAppIdForEnvironment()
+    private static string GetAppIdForEnvironment(Environment env, string customAppId)
     {
-        // 如果手動設定了 appId，就使用手動設定的
-        if (!string.IsNullOrEmpty(appId))
+        if (!string.IsNullOrEmpty(customAppId))
         {
-            return appId;
+            return customAppId;
         }
 
-        // 否則根據環境返回預設的 appId
-        switch (environment)
+        switch (env)
         {
             case Environment.PROD:
                 return "adb53e88-4c35-469a-a888-9e49ef1641b2";

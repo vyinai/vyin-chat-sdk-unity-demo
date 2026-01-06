@@ -17,9 +17,9 @@ namespace VyinChatSdk.Internal
             Debug.Log("Simulate Init in Editor with AppId=" + initParams.AppId);
         }
 
-        public void Connect(string userId, string authToken, VcUserHandler callback)
+        public void Connect(string userId, string authToken, string apiHost, string wsHost, VcUserHandler callback)
         {
-            Debug.Log("Simulate Connect in Editor, userId=" + userId);
+            Debug.Log($"Simulate Connect in Editor, userId={userId}, authToken={authToken ?? "null"}, apiHost={apiHost ?? "default"}, wsHost={wsHost ?? "default"}");
             EditorApplication.delayCall += () =>
             {
                 var user = new VcUser { UserId = "editor_" + userId, Nickname = "EditorUser" };

@@ -17,28 +17,37 @@ namespace VyinChatSdk
     public static class VyinChat
     {
         private static readonly Internal.IVyinChat vyinChatImpl;
+        private static bool _usePureCSharp = false; // Use Legacy implementation by default
 
         static VyinChat()
         {
-#if UNITY_EDITOR
-            Debug.Log("[VyinChat] Platform: Editor (simulated)");
-            vyinChatImpl = new Internal.VyinChatEditor();
-#else
-            switch (Application.platform)
+            if (_usePureCSharp)
             {
-                case RuntimePlatform.Android:
-                    Debug.Log("[VyinChat] Platform: Android");
-                    vyinChatImpl = new Internal.VyinChatAndroid();
-                    break;
-                case RuntimePlatform.IPhonePlayer:
-                    Debug.Log("[VyinChat] Platform: iOS");
-                    vyinChatImpl = new Internal.VyinChatIOS();
-                    break;
-                default:
-                    Debug.LogWarning("[VyinChat] Unsupported platform");
-                    break;
+                Debug.Log("[VyinChat] Using Pure C# implementation");
+                vyinChatImpl = new Internal.Platform.VyinChatMain();
             }
+            else
+            {
+#if UNITY_EDITOR
+                Debug.Log("[VyinChat] Platform: Editor (simulated)");
+                vyinChatImpl = new Internal.VyinChatEditor();
+#else
+                switch (Application.platform)
+                {
+                    case RuntimePlatform.Android:
+                        Debug.Log("[VyinChat] Platform: Android");
+                        vyinChatImpl = new Internal.VyinChatAndroid();
+                        break;
+                    case RuntimePlatform.IPhonePlayer:
+                        Debug.Log("[VyinChat] Platform: iOS");
+                        vyinChatImpl = new Internal.VyinChatIOS();
+                        break;
+                    default:
+                        Debug.LogWarning("[VyinChat] Unsupported platform");
+                        break;
+                }
 #endif
+            }
         }
 
         public static void Init(VcInitParams initParams)
@@ -48,37 +57,55 @@ namespace VyinChatSdk
 
         public static void Connect(string userId, string authToken, VcUserHandler callback)
         {
-            TryExecute(() => vyinChatImpl.Connect(userId, authToken, callback), "Connect");
+            Connect(userId, authToken, null, null, callback);
+        }
+
+        /// <summary>
+        /// Connect with explicit API and WebSocket hosts
+        /// Pure C# implementation: Uses provided hosts for HTTP and WebSocket connections
+        /// Legacy implementations: Use SetConfiguration() before calling Connect with null hosts
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <param name="authToken">Optional auth token</param>
+        /// <param name="apiHost">API host URL (e.g., "https://api.gamania.chat"), null for default</param>
+        /// <param name="wsHost">WebSocket host URL (e.g., "wss://ws.gamania.chat"), null for default</param>
+        /// <param name="callback">Callback with user or error</param>
+        public static void Connect(string userId, string authToken, string apiHost, string wsHost, VcUserHandler callback)
+        {
+            TryExecute(() => vyinChatImpl.Connect(userId, authToken, apiHost, wsHost, callback), "Connect");
         }
 
         /// <summary>
         /// Set custom configuration for ChatSDK
-        /// Call this BEFORE Init() to override default settings (iOS only for now)
+        /// Call this BEFORE Init() to override default settings
         /// </summary>
         /// <param name="appId">Application ID (optional, pass null to keep current)</param>
         /// <param name="domain">Environment domain (e.g., "dev.gim.beango.com", "stg.gim.beango.com", "gamania.chat")</param>
         public static void SetConfiguration(string appId, string domain)
         {
+            if (_usePureCSharp)
+            {
+                // Pure C# implementation does not support SetConfiguration yet
+                // Domain configuration should be set via VcInitParams or environment variables
+                Debug.LogWarning("[VyinChat] Pure C# implementation does not support SetConfiguration. " +
+                    "Please use Init() with appropriate parameters or set configuration before static constructor.");
+            }
+            else
+            {
 #if UNITY_EDITOR
-            Debug.Log($"[VyinChat] Simulate SetConfiguration in Editor - appId: {appId}, domain: {domain}");
+                Debug.Log($"[VyinChat] Simulate SetConfiguration in Editor - appId: {appId}, domain: {domain}");
 #else
-            if (Application.platform == RuntimePlatform.Android)
-            {
-                // TODO: Android implementation not yet available
-                Debug.LogWarning("[VyinChat] SetConfiguration not implemented on Android yet");
-            }
-            else if (Application.platform == RuntimePlatform.IPhonePlayer)
-            {
-                try
+                if (Application.platform == RuntimePlatform.Android)
                 {
-                    Internal.ChatSDKWrapper.SetConfiguration(appId, domain);
+                    // TODO: Android implementation not yet available
+                    Debug.LogWarning("[VyinChat] SetConfiguration not implemented on Android yet");
                 }
-                catch (System.Exception e)
+                else if (Application.platform == RuntimePlatform.IPhonePlayer)
                 {
-                    Debug.LogError("Error calling iOS SetConfiguration: " + e);
+                     Internal.ChatSDKWrapper.SetConfiguration(appId, domain);
                 }
-            }
 #endif
+            }
         }
 
         /// <summary>

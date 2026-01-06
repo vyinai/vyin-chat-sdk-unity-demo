@@ -27,12 +27,12 @@ namespace VyinChatSdk.Internal
             androidBridge.CallStatic("init", activity, initParams.AppId);
         }
 
-        public void Connect(string userId, string authToken, VcUserHandler callback)
+        public void Connect(string userId, string authToken, string apiHost, string wsHost, VcUserHandler callback)
         {
             Debug.Log("[VyinChatAndroid] Connect userId:" + userId + ", authToken:" + authToken);
             var proxy = new ConnectCallbackProxy(callback);
             Debug.Log("Calling AndroidBridge.connect with proxy");
-            androidBridge.CallStatic("connect", userId, authToken, proxy);
+            androidBridge.CallStatic("connect", userId, authToken, apiHost, wsHost, proxy);
             Debug.Log("CallStatic connect finished");
         }
 

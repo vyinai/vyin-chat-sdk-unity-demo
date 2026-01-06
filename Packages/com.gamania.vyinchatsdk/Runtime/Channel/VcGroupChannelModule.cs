@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
+using VyinChatSdk.Internal.Platform;
+using VyinChatSdk.Internal.Domain.UseCases;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -8,6 +12,30 @@ namespace VyinChatSdk
 {
     public static class VcGroupChannelModule
     {
+        public static async void GetGroupChannel(
+            string channelUrl,
+            VcGroupChannelCallbackHandler callback)
+        {
+            try
+            {
+                var repository = VyinChatMain.Instance.GetChannelRepository();
+                var useCase = new GetChannelUseCase(repository);
+                var channel = await useCase.ExecuteAsync(channelUrl);
+
+                callback?.Invoke(channel, null);
+            }
+            catch (VcException vcEx)
+            {
+                Debug.LogError($"[VcGroupChannelModule] GetGroupChannel failed: {vcEx.Message}");
+                callback?.Invoke(null, vcEx.Message);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[VcGroupChannelModule] GetGroupChannel error: {ex.Message}");
+                callback?.Invoke(null, ex.Message);
+            }
+        }
+
         public static void CreateGroupChannel(
             VcGroupChannelCreateParams inChannelCreateParams,
             VcGroupChannelCallbackHandler inGroupChannelCallbackHandler)
@@ -21,7 +49,7 @@ namespace VyinChatSdk
                     var proxy = new GroupChannelCallbackProxy(inGroupChannelCallbackHandler);
                     androidBridge.CallStatic("createChannel", paramsObj, proxy);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     inGroupChannelCallbackHandler?.Invoke(null, e.Message);
                 }
@@ -33,7 +61,7 @@ namespace VyinChatSdk
                 {
                     Internal.ChatSDKWrapper.CreateGroupChannel(inChannelCreateParams, inGroupChannelCallbackHandler);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     Debug.LogError("[VyinChat] Error calling iOS CreateGroupChannel: " + e);
                     inGroupChannelCallbackHandler?.Invoke(null, e.Message);
@@ -50,7 +78,7 @@ namespace VyinChatSdk
 
         public static void CreateGroupChannel(
             VcGroupChannelCreateParams channelCreateParams,
-            System.Action<string, string> callback)
+            Action<string, string> callback)
         {
             if (channelCreateParams == null)
             {
@@ -95,7 +123,7 @@ namespace VyinChatSdk
                 {
                     CreateGroupChannel(channelCreateParams, handler);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     Debug.LogError("[VyinChat] Error calling CreateGroupChannel: " + e);
                     callback?.Invoke(null, e.Message);
@@ -108,7 +136,7 @@ namespace VyinChatSdk
                 {
                     Internal.ChatSDKWrapper.CreateGroupChannel(channelCreateParams, handler);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     Debug.LogError("[VyinChat] Error calling iOS CreateGroupChannel: " + e);
                     callback?.Invoke(null, e.Message);
