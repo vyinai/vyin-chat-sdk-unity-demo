@@ -41,6 +41,7 @@ public class ChatDemoController : MonoBehaviour
     public TMP_InputField inputField;
     public Button sendButton;
     public TextMeshProUGUI logText;
+    public ScrollRect scrollRect;
 
     [Header("Auto Test")]
     [Tooltip("Automatically create channel and send test message on start")]
@@ -59,17 +60,20 @@ public class ChatDemoController : MonoBehaviour
             AppendLogText($"[ChatDemo] Environment: {environment}");
             AppendLogText($"[ChatDemo] Domain: {domain}");
             AppendLogText($"[ChatDemo] AppId: {actualAppId}");
+            AppendLogText("──────────────────────────────");
             // Legacy implementations use VyinChat.SetConfiguration
             // Pure C# implementation uses Connect with explicit hosts
             VyinChat.SetConfiguration(actualAppId, domain);
 
             // 初始化 VyinChat SDK
             AppendLogText("[ChatDemo] Initializing VyinChat...");
+            AppendLogText("──────────────────────────────");
             VcInitParams initParams = new VcInitParams(actualAppId);
             VyinChat.Init(initParams);
 
             // 連線 VyinChat
             AppendLogText($"[ChatDemo] Connecting as '{userId}'...");
+            AppendLogText("──────────────────────────────");
             string token = string.IsNullOrEmpty(authToken) ? null : authToken;
             string apiHost = $"https://{actualAppId}.{domain}";
             string wsHost = $"wss://{actualAppId}.{domain}";
@@ -180,7 +184,8 @@ public class ChatDemoController : MonoBehaviour
             //     AppendLogText($"  - Name: {retrievedChannel.Name}");
             //     AppendLogText($"  - Members: {retrievedChannel.MemberCount}");
             AppendLogText("──────────────────────────────");
-            AppendLogText("AI ChatBot connected! Please enter a message above to start chatting.");
+            AppendLogText("AI ChatBot connected!");
+            AppendLogText("Please enter a message above to start chatting.");
 
             // 發送測試訊息
             if (autoTest)
@@ -321,6 +326,7 @@ public class ChatDemoController : MonoBehaviour
             if (logText != null)
             {
                 logText.text += message + "\n";
+                ScrollToBottom();
             }
         }
         catch (System.Exception e)
@@ -340,12 +346,28 @@ public class ChatDemoController : MonoBehaviour
             if (logText != null)
             {
                 logText.text = string.Join("\n", _messageCache.Values);
+                ScrollToBottom();
             }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"Log error: {e}");
         }
+    }
+
+    private void ScrollToBottom()
+    {
+        if (scrollRect != null)
+        {
+            StartCoroutine(ScrollToBottomCoroutine());
+        }
+    }
+
+    private System.Collections.IEnumerator ScrollToBottomCoroutine()
+    {
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+        scrollRect.verticalNormalizedPosition = 0f;
     }
 
     public static VcBaseMessage ParseMessage(string json)
