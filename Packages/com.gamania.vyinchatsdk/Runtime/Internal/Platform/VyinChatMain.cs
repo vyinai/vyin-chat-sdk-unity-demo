@@ -13,8 +13,7 @@ namespace VyinChatSdk.Internal.Platform
         private IHttpClient _httpClient;
         private IChannelRepository _channelRepository;
         private string _baseUrl;
-        private bool _isInitialized;
-        private string _appId;
+        private VcInitParams _initParams;
 
         // Host configuration constants
         private const string API_HOST_PREFIX = "https://";
@@ -39,20 +38,24 @@ namespace VyinChatSdk.Internal.Platform
         {
             if (initParams == null)
             {
-                Debug.LogError("[VyinChatMain] Init failed: initParams is null");
-                return;
+                throw new ArgumentNullException(nameof(initParams));
             }
 
-            _appId = initParams.AppId;
-            _isInitialized = true;
-            Debug.Log($"[VyinChatMain] Initializing with AppId: {_appId}");
+            if (string.IsNullOrEmpty(initParams.AppId))
+            {
+                throw new ArgumentException("AppId cannot be null or empty", nameof(initParams));
+            }
+
+            _initParams = initParams;
+            Debug.Log($"[VyinChatMain] Initialized with AppId: {initParams.AppId}, " +
+                $"LocalCaching: {initParams.IsLocalCachingEnabled}, LogLevel: {initParams.LogLevel}");
         }
 
         public void Connect(string userId, string authToken, string apiHost, string wsHost, VcUserHandler callback)
         {
-            Debug.Log($"[VyinChatMain] isInitialized={_isInitialized}");
+            Debug.Log($"[VyinChatMain] isInitialized={(_initParams != null)}");
 
-            if (!_isInitialized)
+            if (_initParams == null)
             {
                 var errorMsg = "VyinChatMain instance hasn't been initialized. Try VyinChat.Init().";
                 Debug.LogError($"[VyinChatMain] {errorMsg}");
@@ -72,8 +75,8 @@ namespace VyinChatSdk.Internal.Platform
 
         private void ConnectInternal(string userId, string authToken, string apiHost, string wsHost, VcUserHandler callback)
         {
-            apiHost = string.IsNullOrWhiteSpace(apiHost) ? GetDefaultApiHost(_appId) : apiHost;
-            wsHost = string.IsNullOrWhiteSpace(wsHost) ? GetDefaultWsHost(_appId) : wsHost;
+            apiHost = string.IsNullOrWhiteSpace(apiHost) ? GetDefaultApiHost(_initParams.AppId) : apiHost;
+            wsHost = string.IsNullOrWhiteSpace(wsHost) ? GetDefaultWsHost(_initParams.AppId) : wsHost;
 
             Debug.Log($"[VyinChatMain] Connecting with API host: {apiHost}, WS host: {wsHost}");
 
@@ -134,7 +137,7 @@ namespace VyinChatSdk.Internal.Platform
 
         private void EnsureInitialized()
         {
-            if (!_isInitialized)
+            if (_initParams == null)
             {
                 throw new InvalidOperationException(
                     "VyinChatMain not initialized. Call Init() first.");
