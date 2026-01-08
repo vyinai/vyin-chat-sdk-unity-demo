@@ -145,11 +145,14 @@ namespace VyinChatSdk.Internal.Platform
         }
 
         /// <summary>
-        /// Reset instance (for testing)
+        /// Reset instance state (for testing)
         /// </summary>
-        public static void Reset()
+        public void Reset()
         {
-            _instance = null;
+            _initParams = null;
+            _httpClient = new UnityHttpClient();
+            _channelRepository = null;
+            _baseUrl = null;
         }
     }
 }
