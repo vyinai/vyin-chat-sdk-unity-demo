@@ -6,6 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using VyinChatSdk;
+using VyinChatSdk.Internal.Platform;
 
 namespace VyinChatSdk.Internal
 {
@@ -74,7 +75,6 @@ namespace VyinChatSdk.Internal
             return callbackId;
         }
 
-        // Handle native API callbacks (called from iOS)
         [AOT.MonoPInvokeCallback(typeof(CallbackDelegate))]
         private static void OnNativeCallback(int callbackId, string result, string error)
         {
@@ -82,7 +82,10 @@ namespace VyinChatSdk.Internal
 
             if (callbacks.TryGetValue(callbackId, out var callback))
             {
-                callback?.Invoke(result, error);
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    callback?.Invoke(result, error);
+                });
                 callbacks.Remove(callbackId);
             }
         }
@@ -98,7 +101,10 @@ namespace VyinChatSdk.Internal
                 try
                 {
                     var message = JsonUtility.FromJson<ReceivedMessage>(messageJson);
-                    OnMessageReceived?.Invoke(eventType, message);
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        OnMessageReceived?.Invoke(eventType, message);
+                    });
                 }
                 catch (Exception ex)
                 {

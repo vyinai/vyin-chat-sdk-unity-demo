@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using VyinChatSdk.Internal.Platform;
 
 namespace VyinChatSdk
 {
@@ -203,11 +204,22 @@ namespace VyinChatSdk
                     var groupChannel = baseChannel.ToVcGroupChannel();
                     var message = baseMessage.ToVcBaseMessage();
                     Debug.Log("[VyinChatSdk] onMessageReceived: groupChannel=" + groupChannel + ", message=" + message);
-                    handler.OnMessageReceived(groupChannel, message);
+
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        try
+                        {
+                            handler.OnMessageReceived(groupChannel, message);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[VyinChatSdk] Error in handler.OnMessageReceived: {e.Message}");
+                        }
+                    });
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[VyinChatSdk] Error in handler onMessageReceived: {e.Message}");
+                    Debug.LogError($"[VyinChatSdk] Error in onMessageReceived: {e.Message}");
                 }
             }
 
@@ -218,11 +230,22 @@ namespace VyinChatSdk
                     var groupChannel = baseChannel.ToVcGroupChannel();
                     var message = baseMessage.ToVcBaseMessage();
                     Debug.Log("[VyinChatSdk] onMessageUpdated: groupChannel=" + groupChannel + ", message=" + message);
-                    handler.OnMessageUpdated(groupChannel, message);
+
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        try
+                        {
+                            handler.OnMessageUpdated(groupChannel, message);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[VyinChatSdk] Error in handler.OnMessageUpdated: {e.Message}");
+                        }
+                    });
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[VyinChatSdk] Error in handler onMessageUpdated: {e.Message}");
+                    Debug.LogError($"[VyinChatSdk] Error in onMessageUpdated: {e.Message}");
                 }
             }
         }

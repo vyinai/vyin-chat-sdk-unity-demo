@@ -164,15 +164,19 @@ namespace VyinChatSdk
             {
                 Debug.Log("onResult: channel=" + channel + ", error=" + exception);
                 var error = exception.GetErrorMessage();
-                if (!string.IsNullOrEmpty(error))
+                var groupChannel = !string.IsNullOrEmpty(error) ? null : channel.ToVcGroupChannel();
+
+                MainThreadDispatcher.Enqueue(() =>
                 {
-                    callback?.Invoke(null, error);
-                    Debug.LogError("onResult: error=" + error);
-                    return;
-                }
-                var groupChannel = channel.ToVcGroupChannel();
-                Debug.Log("onResult: groupChannel=" + groupChannel);
-                callback.Invoke(groupChannel, null);
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        callback?.Invoke(null, error);
+                        Debug.LogError("onResult: error=" + error);
+                        return;
+                    }
+                    Debug.Log("onResult: groupChannel=" + groupChannel);
+                    callback.Invoke(groupChannel, null);
+                });
             }
         }
     }

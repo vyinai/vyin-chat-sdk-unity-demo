@@ -184,7 +184,10 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
         private void HandleOnOpen()
         {
             Debug.Log("[UnityWebSocketClient] Connection opened");
-            OnConnected?.Invoke();
+            MainThreadDispatcher.Enqueue(() =>
+            {
+                OnConnected?.Invoke();
+            });
         }
 
         private void HandleOnClose(WebSocketCloseCode closeCode)
@@ -192,7 +195,10 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             Debug.Log($"[UnityWebSocketClient] Connection closed: {closeCode}");
             CancelAuthTimeout();
             ClearAllPendingAcks();
-            OnDisconnected?.Invoke();
+            MainThreadDispatcher.Enqueue(() =>
+            {
+                OnDisconnected?.Invoke();
+            });
         }
 
         private void HandleOnMessage(byte[] data)
@@ -202,7 +208,6 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 string message = System.Text.Encoding.UTF8.GetString(data);
                 Debug.Log($"[UnityWebSocketClient] Received: {message}");
 
-                // Parse command type
                 var commandType = CommandParser.ExtractCommandType(message);
                 if (commandType == null)
                 {
@@ -212,33 +217,38 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
 
                 var payload = CommandParser.ExtractPayload(message);
 
-                // Handle LOGI / Authentication
                 if (commandType == CommandType.LOGI)
                 {
                     HandleLogiCommand(message, payload);
                 }
-                // Handle MACK - Acknowledgement
                 else if (commandType == CommandType.MACK)
                 {
                     HandleMackCommand(payload);
                 }
-                // Handle EROR - Error
                 else if (commandType == CommandType.EROR)
                 {
                     CancelAuthTimeout();
-                    OnError?.Invoke("Authentication failed (EROR message).");
-                    OnCommandReceived?.Invoke(commandType.Value, payload);
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        OnError?.Invoke("Authentication failed (EROR message).");
+                        OnCommandReceived?.Invoke(commandType.Value, payload);
+                    });
                 }
-                // All other commands - Dispatch as event
                 else
                 {
-                    OnCommandReceived?.Invoke(commandType.Value, payload);
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        OnCommandReceived?.Invoke(commandType.Value, payload);
+                    });
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[UnityWebSocketClient] Message decode exception: {ex.Message}");
-                OnError?.Invoke($"Failed to decode message: {ex.Message}");
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    OnError?.Invoke($"Failed to decode message: {ex.Message}");
+                });
             }
         }
 
@@ -246,7 +256,10 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
         {
             Debug.LogError($"[UnityWebSocketClient] WebSocket error: {errorMessage}");
             CancelAuthTimeout();
-            OnError?.Invoke(errorMessage);
+            MainThreadDispatcher.Enqueue(() =>
+            {
+                OnError?.Invoke(errorMessage);
+            });
         }
 
         // ACK Management
@@ -324,12 +337,18 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 {
                     _sessionKey = logi.SessionKey;
                     CancelAuthTimeout();
-                    OnAuthenticated?.Invoke(_sessionKey);
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        OnAuthenticated?.Invoke(_sessionKey);
+                    });
                 }
                 else
                 {
                     CancelAuthTimeout();
-                    OnError?.Invoke("Authentication failed (LOGI error).");
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        OnError?.Invoke("Authentication failed (LOGI error).");
+                    });
                 }
             }
         }
@@ -364,7 +383,10 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             {
                 string error = "Cannot send message: WebSocket is not connected";
                 Debug.LogError($"[UnityWebSocketClient] {error}");
-                OnError?.Invoke(error);
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    OnError?.Invoke(error);
+                });
                 throw new InvalidOperationException(error);
             }
 
@@ -376,7 +398,10 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             catch (Exception ex)
             {
                 Debug.LogError($"[UnityWebSocketClient] Send exception: {ex.Message}");
-                OnError?.Invoke($"Send failed: {ex.Message}");
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    OnError?.Invoke($"Send failed: {ex.Message}");
+                });
                 throw;
             }
         }
@@ -395,7 +420,10 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                     {
                         return;
                     }
-                    OnError?.Invoke("Authentication timeout (LOGI not received).");
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        OnError?.Invoke("Authentication timeout (LOGI not received).");
+                    });
                 }
                 catch (TaskCanceledException)
                 {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using VyinChatSdk;
+using VyinChatSdk.Internal.Platform;
 
 namespace VyinChatSdk.Internal
 {
@@ -49,15 +50,19 @@ namespace VyinChatSdk.Internal
             {
                 Debug.Log("onConnected: user=" + user + ", error=" + exception);
                 var error = exception.GetErrorMessage();
-                if (!string.IsNullOrEmpty(error))
+                var vcUser = !string.IsNullOrEmpty(error) ? null : user.ToVcUser();
+
+                MainThreadDispatcher.Enqueue(() =>
                 {
-                    callback?.Invoke(null, error);
-                    Debug.LogError("onConnected: error=" + error);
-                    return;
-                }
-                var vcUser = user.ToVcUser();
-                Debug.Log("onConnected: user=" + vcUser);
-                callback?.Invoke(vcUser, null);
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        callback?.Invoke(null, error);
+                        Debug.LogError("onConnected: error=" + error);
+                        return;
+                    }
+                    Debug.Log("onConnected: user=" + vcUser);
+                    callback?.Invoke(vcUser, null);
+                });
             }
         }
     }

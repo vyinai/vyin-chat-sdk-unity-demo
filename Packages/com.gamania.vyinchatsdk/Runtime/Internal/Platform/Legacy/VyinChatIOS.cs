@@ -1,5 +1,6 @@
 using UnityEngine;
 using VyinChatSdk;
+using VyinChatSdk.Internal.Platform;
 
 namespace VyinChatSdk.Internal
 {
@@ -33,7 +34,11 @@ namespace VyinChatSdk.Internal
                     {
                         user = new VcUser { UserId = userId };
                     }
-                    callback?.Invoke(user, error);
+
+                    MainThreadDispatcher.Enqueue(() =>
+                    {
+                        callback?.Invoke(user, error);
+                    });
                 });
             }
             catch (System.Exception e)

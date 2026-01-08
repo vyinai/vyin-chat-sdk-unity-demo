@@ -15,6 +15,7 @@ using System.Collections;
 using VyinChatSdk.Internal.Data.Network;
 using VyinChatSdk.Internal.Domain.Commands;
 using VyinChatSdk.Internal.Platform.Unity.Network;
+using VyinChatSdk.Internal.Platform;
 using UnityEngine;
 
 namespace VyinChatSdk.Tests.Runtime.Internal.Integration
@@ -38,12 +39,14 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Integration
         [SetUp]
         public void SetUp()
         {
+            MainThreadDispatcher.ClearQueue();
+
             client = new UnityWebSocketClient();
             testConfig = new WebSocketConfig
             {
                 ApplicationId = TEST_APP_ID,
                 UserId = TEST_USER_ID,
-                AccessToken = null,  // Token is optional for this test server
+                AccessToken = null,
                 EnvironmentDomain = VALID_ENV
             };
         }
