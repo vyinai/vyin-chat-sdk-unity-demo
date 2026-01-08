@@ -14,7 +14,7 @@ namespace VyinChatSdk.Tests.Editor.Internal.Domain.Commands
         }
 
         [TestCase(CommandType.PING)]
-        [TestCase(CommandType.MACK)]
+        [TestCase(CommandType.PONG)]
         [TestCase(CommandType.EROR)]
         public void IsAckRequired_ShouldReturnFalse_ForNonAckCommands(CommandType commandType)
         {

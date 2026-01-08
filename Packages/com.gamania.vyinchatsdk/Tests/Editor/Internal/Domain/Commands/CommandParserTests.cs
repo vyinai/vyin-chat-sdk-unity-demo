@@ -68,13 +68,13 @@ namespace VyinChatSdk.Tests.Editor.Internal.Domain.Commands
         }
 
         [Test]
-        public void ExtractCommandType_Mack_ShouldReturnMACK()
+        public void ExtractCommandType_Mesg_ShouldReturnMESG()
         {
-            string message = "MACK{\"req_id\":\"abc\"}";
+            string message = "MESG{\"req_id\":\"abc\"}";
 
             var result = CommandParser.ExtractCommandType(message);
 
-            Assert.AreEqual(CommandType.MACK, result);
+            Assert.AreEqual(CommandType.MESG, result);
         }
 
         [Test]

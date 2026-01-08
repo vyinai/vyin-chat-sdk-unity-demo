@@ -22,7 +22,7 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Domain.Commands
             var task = ws.SendCommandAsync(CommandType.MESG, new { text = "hi" }, TimeSpan.FromSeconds(2));
 
             var reqId = ExtractReqId(ws.LastSent);
-            ws.SimulateIncoming($"MACK{{\"req_id\":\"{reqId}\"}}");
+            ws.SimulateIncoming($"MESG{{\"req_id\":\"{reqId}\"}}");
 
             yield return new WaitUntil(() => task.IsCompleted);
             
@@ -51,11 +51,11 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Domain.Commands
             var task = ws.SendCommandAsync(CommandType.MESG, new { text = "hi" }, TimeSpan.FromSeconds(2));
 
             var reqId = ExtractReqId(ws.LastSent);
-            ws.SimulateIncoming("MACK{\"req_id\":\"other\"}");
+            ws.SimulateIncoming("MESG{\"req_id\":\"other\"}");
             Assert.IsFalse(task.IsCompleted, "Task should remain pending after wrong req_id");
 
-            ws.SimulateIncoming($"MACK{{\"req_id\":\"{reqId}\"}}");
-            
+            ws.SimulateIncoming($"MESG{{\"req_id\":\"{reqId}\"}}");
+
             yield return new WaitUntil(() => task.IsCompleted);
             
             var result = task.Result;
@@ -71,14 +71,14 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Domain.Commands
             var t2 = ws.SendCommandAsync(CommandType.MESG, new { text = "m2" }, TimeSpan.FromSeconds(2));
             var r2 = ExtractReqId(ws.LastSent);
 
-            ws.SimulateIncoming($"MACK{{\"req_id\":\"{r2}\"}}");
-            
+            ws.SimulateIncoming($"MESG{{\"req_id\":\"{r2}\"}}");
+
             yield return new WaitUntil(() => t2.IsCompleted);
             Assert.IsNotNull(t2.Result, "r2 should complete success");
             Assert.IsFalse(t1.IsCompleted, "r1 should remain pending while r2 is completed");
 
-            ws.SimulateIncoming($"MACK{{\"req_id\":\"{r1}\"}}");
-            
+            ws.SimulateIncoming($"MESG{{\"req_id\":\"{r1}\"}}");
+
             yield return new WaitUntil(() => t1.IsCompleted);
             Assert.IsNotNull(t1.Result, "r1 should complete success");
         }
@@ -89,7 +89,7 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Domain.Commands
             var ws = CreateFakeClient();
             var task = ws.SendCommandAsync(CommandType.MESG, new { text = "hi" }, TimeSpan.FromMilliseconds(200));
 
-            ws.SimulateIncoming("MACK{\"req_id\":\"wrong\"}");
+            ws.SimulateIncoming("MESG{\"req_id\":\"wrong\"}");
 
             Assert.IsFalse(task.IsCompleted, "Task should stay pending until timeout");
             
@@ -106,16 +106,16 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Domain.Commands
             var task = ws.SendCommandAsync(CommandType.MESG, new { text = "hi" }, TimeSpan.FromSeconds(2));
             var reqId = ExtractReqId(ws.LastSent);
 
-            ws.SimulateIncoming($"MACK{{\"req_id\":\"{reqId}\"}}");
-            
+            ws.SimulateIncoming($"MESG{{\"req_id\":\"{reqId}\"}}");
+
             yield return new WaitUntil(() => task.IsCompleted);
-            Assert.IsTrue(task.IsCompleted, "Task should complete after first MACK");
-            
+            Assert.IsTrue(task.IsCompleted, "Task should complete after first MESG ACK");
+
             var result = task.Result;
             Assert.IsNotNull(result, "Should have ACK payload");
 
             // Simulate duplicate - should not throw or cause issues
-            ws.SimulateIncoming($"MACK{{\"req_id\":\"{reqId}\"}}");
+            ws.SimulateIncoming($"MESG{{\"req_id\":\"{reqId}\"}}");
         }
 
         [UnityTest]
@@ -207,12 +207,13 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Domain.Commands
             public void SimulateIncoming(string message)
             {
                 var commandType = CommandParser.ExtractCommandType(message);
-                if (commandType == CommandType.MACK)
+                if (commandType == CommandType.MESG)
                 {
                     var payload = CommandParser.ExtractPayload(message);
                     var reqId = ExtractReqIdFromPayload(payload);
                     if (!string.IsNullOrEmpty(reqId))
                     {
+                        // Check if this is an ACK response (has req_id and matches pending request)
                         CompletePendingAck(reqId, payload, cancelTimeout: true);
                     }
                 }

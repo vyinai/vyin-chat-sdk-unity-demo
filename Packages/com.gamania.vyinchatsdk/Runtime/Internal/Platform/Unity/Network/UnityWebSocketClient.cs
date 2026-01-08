@@ -221,9 +221,9 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 {
                     HandleLogiCommand(message, payload);
                 }
-                else if (commandType == CommandType.MACK)
+                else if (commandType == CommandType.MESG)
                 {
-                    HandleMackCommand(payload);
+                    HandleMesgCommand(payload);
                 }
                 else if (commandType == CommandType.EROR)
                 {
@@ -312,19 +312,19 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             }
         }
 
-        private void HandleMackCommand(string payload)
+        private void HandleMesgCommand(string payload)
         {
             var reqId = ExtractReqId(payload);
             if (string.IsNullOrWhiteSpace(reqId))
             {
-                Debug.LogWarning("[UnityWebSocketClient] MACK received without req_id");
+                Debug.LogWarning("[UnityWebSocketClient] MESG ACK received without req_id");
                 return;
             }
 
             bool completed = CompletePendingAck(reqId, payload, cancelTimeout: true);
             if (!completed)
             {
-                Debug.LogWarning($"[UnityWebSocketClient] MACK received for unknown reqId: {reqId}");
+                Debug.LogWarning($"[UnityWebSocketClient] MESG ACK received for unknown reqId: {reqId}");
             }
         }
 

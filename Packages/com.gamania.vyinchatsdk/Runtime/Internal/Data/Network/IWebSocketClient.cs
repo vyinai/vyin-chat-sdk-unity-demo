@@ -51,7 +51,7 @@ namespace VyinChatSdk.Internal.Data.Network
 
         /// <summary>
         /// Send a command through WebSocket with ACK handling
-        /// If the command requires ACK, waits for MACK or timeout
+        /// If the command requires ACK, waits for MESG ACK or timeout
         /// Returns the ACK payload if successful, null if timeout or command doesn't require ACK
         /// </summary>
         /// <param name="commandType">Type of command to send</param>
