@@ -43,11 +43,45 @@ namespace VyinChatSdk
                 return;
             }
 
+#if UNITY_EDITOR
+            // Unity Editor: Use Pure C# implementation
             _ = ExecuteAsyncWithCallback(
                 () => GetGroupChannelAsync(channelUrl),
                 callback,
                 "GetGroupChannel"
             );
+#else
+            // Runtime: Check if platform supports GetChannel
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                // Android: Not yet implemented, use Pure C# fallback
+                Debug.LogWarning("[VcGroupChannelModule] Android GetChannel not implemented, using Pure C# implementation");
+                _ = ExecuteAsyncWithCallback(
+                    () => GetGroupChannelAsync(channelUrl),
+                    callback,
+                    "GetGroupChannel"
+                );
+            }
+            else if (Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+                // iOS: Not yet implemented, use Pure C# fallback
+                Debug.LogWarning("[VcGroupChannelModule] iOS GetChannel not implemented, using Pure C# implementation");
+                _ = ExecuteAsyncWithCallback(
+                    () => GetGroupChannelAsync(channelUrl),
+                    callback,
+                    "GetGroupChannel"
+                );
+            }
+            else
+            {
+                // Fallback to Pure C# for other platforms
+                _ = ExecuteAsyncWithCallback(
+                    () => GetGroupChannelAsync(channelUrl),
+                    callback,
+                    "GetGroupChannel"
+                );
+            }
+#endif
         }
 
         #endregion
@@ -82,11 +116,55 @@ namespace VyinChatSdk
                 return;
             }
 
+#if UNITY_EDITOR
+            // Unity Editor: Use Pure C# implementation
             _ = ExecuteAsyncWithCallback(
                 () => CreateGroupChannelAsync(createParams),
                 callback,
                 "CreateGroupChannel"
             );
+#else
+            // Runtime: Use platform-specific implementations
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                try
+                {
+                    AndroidJavaClass androidBridge = new AndroidJavaClass("com.gamania.gim.unitybridge.UnityBridge");
+                    AndroidJavaObject paramsObj = createParams.ToAndroidJavaObject();
+                    var proxy = new GroupChannelCallbackProxy(callback);
+                    androidBridge.CallStatic("createChannel", paramsObj, proxy);
+                }
+                catch (Exception e)
+                {
+                    callback?.Invoke(null, e.Message);
+                }
+            }
+            else if (Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+#if UNITY_IOS
+                try
+                {
+                    Internal.ChatSDKWrapper.CreateGroupChannel(createParams, callback);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[VcGroupChannelModule] Error calling iOS CreateGroupChannel: " + e);
+                    callback?.Invoke(null, e.Message);
+                }
+#else
+                callback?.Invoke(null, "iOS SDK not available in this build");
+#endif
+            }
+            else
+            {
+                // Fallback to Pure C# for other platforms
+                _ = ExecuteAsyncWithCallback(
+                    () => CreateGroupChannelAsync(createParams),
+                    callback,
+                    "CreateGroupChannel"
+                );
+            }
+#endif
         }
 
         #endregion

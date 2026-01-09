@@ -171,18 +171,18 @@ public class ChatDemoController : MonoBehaviour
             currentChannelUrl = channel.ChannelUrl;
             AppendLogText($"[ChatDemo] Channel created: '{channel.Name}', ChannelUrl: '{currentChannelUrl}'");
 
-            VcGroupChannelModule.GetGroupChannel(currentChannelUrl, (retrievedChannel, getError) =>
-            {
-                if (!string.IsNullOrEmpty(getError))
-                {
-                    AppendLogText($"[ChatDemo] GetChannel failed: {getError}");
-                    return;
-                }
+            // VcGroupChannelModule.GetGroupChannel(currentChannelUrl, (retrievedChannel, getError) =>
+            // {
+            //     if (!string.IsNullOrEmpty(getError))
+            //     {
+            //         AppendLogText($"[ChatDemo] GetChannel failed: {getError}");
+            //         return;
+            //     }
 
-                AppendLogText($"[ChatDemo] GetChannel success!");
-                AppendLogText($"  - Channel URL: {retrievedChannel.ChannelUrl}");
-                AppendLogText($"  - Name: {retrievedChannel.Name}");
-                AppendLogText($"  - Members: {retrievedChannel.MemberCount}");
+            //     AppendLogText($"[ChatDemo] GetChannel success!");
+            //     AppendLogText($"  - Channel URL: {retrievedChannel.ChannelUrl}");
+            //     AppendLogText($"  - Name: {retrievedChannel.Name}");
+            //     AppendLogText($"  - Members: {retrievedChannel.MemberCount}");
                 AppendLogText("──────────────────────────────");
                 AppendLogText("AI ChatBot connected!");
                 AppendLogText("Please enter a message above to start chatting.");
@@ -192,7 +192,7 @@ public class ChatDemoController : MonoBehaviour
                 {
                     SendTestMessage(currentChannelUrl);
                 }
-            });
+            // });
         }
 
         VcGroupChannelModule.CreateGroupChannel(channelCreateParams, channelCreateCallback);
