@@ -39,7 +39,13 @@ namespace VyinChatSdk.Internal.Platform
                         {
                             var go = new GameObject("VyinChatMainThreadDispatcher");
                             _instance = go.AddComponent<MainThreadDispatcher>();
-                            DontDestroyOnLoad(go);
+
+                            // DontDestroyOnLoad only works in PlayMode
+                            if (Application.isPlaying)
+                            {
+                                DontDestroyOnLoad(go);
+                            }
+
                             Debug.Log("[MainThreadDispatcher] Initialized");
                         }
                     }
