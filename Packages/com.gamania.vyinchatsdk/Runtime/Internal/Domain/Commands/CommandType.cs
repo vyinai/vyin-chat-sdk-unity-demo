@@ -38,7 +38,6 @@ namespace VyinChatSdk.Internal.Domain.Commands
         MRCT,  // Message Reaction
         PING,  // Ping
         PONG,  // Pong
-        MACK,  // Message Acknowledgement
         JOIN,  // Join
         MTHD,  // Message Thread
         EXPR,  // Expression

@@ -11,6 +11,7 @@ namespace VyinChatSdk.Internal.Platform
     {
         private static VyinChatMain _instance;
         private IHttpClient _httpClient;
+        private IWebSocketClient _webSocketClient;
         private IChannelRepository _channelRepository;
         private string _baseUrl;
         private VcInitParams _initParams;
@@ -32,6 +33,7 @@ namespace VyinChatSdk.Internal.Platform
         public VyinChatMain()
         {
             _httpClient = new UnityHttpClient();
+            _webSocketClient = new UnityWebSocketClient();
         }
 
         public void Init(VcInitParams initParams)
@@ -80,19 +82,64 @@ namespace VyinChatSdk.Internal.Platform
 
             Debug.Log($"[VyinChatMain] Connecting with API host: {apiHost}, WS host: {wsHost}");
 
-            // TODO: Implement pure C# WebSocket connection to wsHost
-            // On successful WebSocket connection:
-            // 1. Extract session_key from WebSocket response
-            // 2. Call SetSessionKey(sessionKey) to enable authenticated HTTP requests
-
             // Initialize HTTP repositories with API host
             _baseUrl = apiHost;
             _channelRepository = new ChannelRepositoryImpl(_httpClient, _baseUrl);
             Debug.Log($"[VyinChatMain] HTTP repositories initialized with API host: {_baseUrl}");
 
-            // For now, WebSocket connection is not implemented
-            Debug.LogWarning("[VyinChatMain] WebSocket Connect not yet implemented in Pure C# mode");
-            callback?.Invoke(null, "Pure C# WebSocket Connect not yet implemented");
+            // Create WebSocket configuration
+            var wsConfig = new WebSocketConfig
+            {
+                ApplicationId = _initParams.AppId,
+                UserId = userId,
+                AccessToken = authToken,
+                AppVersion = _initParams.AppVersion,
+                CustomWebSocketBaseUrl = wsHost
+            };
+
+            // Setup event handlers
+            Action<string> onAuthenticatedHandler = null;
+            Action<string> onErrorHandler = null;
+
+            onAuthenticatedHandler = (sessionKey) =>
+            {
+                Debug.Log($"[VyinChatMain] Authentication successful, session key received");
+
+                // Store session key for HTTP requests
+                SetSessionKey(sessionKey);
+
+                // Create user object
+                var user = new VcUser
+                {
+                    UserId = userId
+                };
+
+                // Cleanup handlers
+                _webSocketClient.OnAuthenticated -= onAuthenticatedHandler;
+                _webSocketClient.OnError -= onErrorHandler;
+
+                // Invoke success callback
+                callback?.Invoke(user, null);
+            };
+
+            onErrorHandler = (error) =>
+            {
+                Debug.LogError($"[VyinChatMain] WebSocket error: {error}");
+
+                // Cleanup handlers
+                _webSocketClient.OnAuthenticated -= onAuthenticatedHandler;
+                _webSocketClient.OnError -= onErrorHandler;
+
+                // Invoke error callback
+                callback?.Invoke(null, error);
+            };
+
+            _webSocketClient.OnAuthenticated += onAuthenticatedHandler;
+            _webSocketClient.OnError += onErrorHandler;
+
+            // Start WebSocket connection
+            Debug.Log($"[VyinChatMain] Starting WebSocket connection");
+            _webSocketClient.Connect(wsConfig);
         }
 
         private string GetDefaultApiHost(string appId)
@@ -145,11 +192,21 @@ namespace VyinChatSdk.Internal.Platform
         }
 
         /// <summary>
-        /// Reset instance (for testing)
+        /// Reset instance state (for testing)
         /// </summary>
-        public static void Reset()
+        public void Reset()
         {
-            _instance = null;
+            // Disconnect WebSocket if connected
+            if (_webSocketClient != null && _webSocketClient.IsConnected)
+            {
+                _webSocketClient.Disconnect();
+            }
+
+            _initParams = null;
+            _httpClient = new UnityHttpClient();
+            _webSocketClient = new UnityWebSocketClient();
+            _channelRepository = null;
+            _baseUrl = null;
         }
     }
 }

@@ -324,11 +324,18 @@ namespace VyinChatSdk
 
         #region Helper Methods
 
+
         public static void TryExecute(Action action, string actionName)
         {
             try
             {
                 action.Invoke();
+            }
+            catch (InvalidOperationException)
+            {
+                // Re-throw InvalidOperationException (e.g., not initialized)
+                // so tests can catch it
+                throw;
             }
             catch (Exception e)
             {
@@ -363,7 +370,12 @@ namespace VyinChatSdk
         public static void ResetForTesting()
         {
             _initParams = null;
-            Internal.Platform.VyinChatMain.Reset();
+
+            // Reset the implementation instance state
+            if (vyinChatImpl is Internal.Platform.VyinChatMain vyinChatMain)
+            {
+                vyinChatMain.Reset();
+            }
         }
 #endif
     }

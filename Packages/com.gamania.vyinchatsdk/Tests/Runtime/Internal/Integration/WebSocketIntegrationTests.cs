@@ -12,6 +12,7 @@ using NUnit.Framework;
 using UnityEngine.TestTools;
 using System.Text.RegularExpressions;
 using System.Collections;
+using VyinChatSdk;
 using VyinChatSdk.Internal.Data.Network;
 using VyinChatSdk.Internal.Domain.Commands;
 using VyinChatSdk.Internal.Platform.Unity.Network;
@@ -322,5 +323,50 @@ namespace VyinChatSdk.Tests.Runtime.Internal.Integration
 
             Assert.IsTrue(gotError || !authenticated, "Invalid LOGI or error should fail auth");
         }
+
+        #region VyinChat.Connect() Integration Tests
+
+        /// <summary>
+        /// VyinChat.Connect() should return VcUser when authentication succeeds
+        /// </summary>
+        [UnityTest]
+        public IEnumerator VyinChatConnect_ShouldReturnUser_WhenSuccess()
+        {
+            // Arrange
+            VyinChat.ResetForTesting();
+            var initParams = new VcInitParams(TEST_APP_ID);
+            VyinChat.Init(initParams);
+
+            VcUser resultUser = null;
+            string resultError = null;
+            bool callbackCalled = false;
+
+            // Act
+            VyinChat.Connect(TEST_USER_ID, null, (user, error) =>
+            {
+                resultUser = user;
+                resultError = error;
+                callbackCalled = true;
+            });
+
+            // Wait for callback
+            float elapsed = 0f;
+            while (!callbackCalled && elapsed < LOGI_TIMEOUT)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // Assert
+            Assert.IsTrue(callbackCalled, "Callback should be called");
+            Assert.IsNull(resultError, $"Error should be null. Got: {resultError}");
+            Assert.IsNotNull(resultUser, "User should not be null");
+            Assert.AreEqual(TEST_USER_ID, resultUser.UserId, "UserId should match");
+
+            // Cleanup
+            VyinChat.ResetForTesting();
+        }
+
+        #endregion
     }
 }

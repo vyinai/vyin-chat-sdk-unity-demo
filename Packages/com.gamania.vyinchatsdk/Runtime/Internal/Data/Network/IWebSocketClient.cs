@@ -34,9 +34,20 @@ namespace VyinChatSdk.Internal.Data.Network
         event Action<string> OnError;
 
         /// <summary>
+        /// Event triggered when authentication is successful (LOGI received)
+        /// Parameter: session key
+        /// </summary>
+        event Action<string> OnAuthenticated;
+
+        /// <summary>
         /// Current connection state
         /// </summary>
         bool IsConnected { get; }
+
+        /// <summary>
+        /// Session key received from LOGI command
+        /// </summary>
+        string SessionKey { get; }
 
         /// <summary>
         /// Connect to WebSocket server with configuration
@@ -51,7 +62,7 @@ namespace VyinChatSdk.Internal.Data.Network
 
         /// <summary>
         /// Send a command through WebSocket with ACK handling
-        /// If the command requires ACK, waits for MACK or timeout
+        /// If the command requires ACK, waits for MESG ACK or timeout
         /// Returns the ACK payload if successful, null if timeout or command doesn't require ACK
         /// </summary>
         /// <param name="commandType">Type of command to send</param>
