@@ -23,6 +23,7 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
         public void SetSessionKey(string sessionKey)
         {
             _sessionKey = sessionKey;
+            UnityEngine.Debug.Log($"[UnityHttpClient] Session key set: {sessionKey}");
         }
 
         public async Task<HttpResponse> GetAsync(

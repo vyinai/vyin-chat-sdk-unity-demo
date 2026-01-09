@@ -13,6 +13,7 @@ namespace VyinChatSdk.Internal.Platform
     {
         private static MainThreadDispatcher _instance;
         private static readonly Queue<Action> _executionQueue = new Queue<Action>();
+        private static readonly List<Action> _updateCallbacks = new List<Action>();
         private static readonly object _lock = new object();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -57,6 +58,7 @@ namespace VyinChatSdk.Internal.Platform
             lock (_lock)
             {
                 _executionQueue.Clear();
+                _updateCallbacks.Clear();
             }
             if (_instance == this)
             {
@@ -66,6 +68,7 @@ namespace VyinChatSdk.Internal.Platform
 
         void Update()
         {
+            // Process queued actions
             lock (_lock)
             {
                 while (_executionQueue.Count > 0)
@@ -79,6 +82,25 @@ namespace VyinChatSdk.Internal.Platform
                     {
                         Debug.LogError($"[MainThreadDispatcher] Error executing action: {e}");
                     }
+                }
+            }
+
+            // Process update callbacks (e.g., WebSocket message dispatch)
+            List<Action> callbacksCopy;
+            lock (_lock)
+            {
+                callbacksCopy = new List<Action>(_updateCallbacks);
+            }
+
+            foreach (var callback in callbacksCopy)
+            {
+                try
+                {
+                    callback?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[MainThreadDispatcher] Error executing update callback: {e}");
                 }
             }
         }
@@ -95,6 +117,38 @@ namespace VyinChatSdk.Internal.Platform
             lock (_lock)
             {
                 _executionQueue.Enqueue(action);
+            }
+        }
+
+        /// <summary>
+        /// Register a callback to be executed every Update cycle
+        /// Used for WebSocket message dispatching
+        /// </summary>
+        public static void RegisterUpdateCallback(Action callback)
+        {
+            if (callback == null) return;
+
+            var _ = Instance;
+
+            lock (_lock)
+            {
+                if (!_updateCallbacks.Contains(callback))
+                {
+                    _updateCallbacks.Add(callback);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unregister an update callback
+        /// </summary>
+        public static void UnregisterUpdateCallback(Action callback)
+        {
+            if (callback == null) return;
+
+            lock (_lock)
+            {
+                _updateCallbacks.Remove(callback);
             }
         }
 

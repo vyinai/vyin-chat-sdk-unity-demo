@@ -31,8 +31,15 @@ namespace VyinChatSdk.Internal.Data.Network
 
         /// <summary>
         /// Environment domain (default: "gamania.chat")
+        /// Only used when CustomWebSocketBaseUrl is null
         /// </summary>
         public string EnvironmentDomain { get; set; } = "gamania.chat";
+
+        /// <summary>
+        /// Custom WebSocket base URL (e.g., "wss://custom-app.dev.gim.beango.com")
+        /// If set, this URL will be used directly instead of building from ApplicationId and EnvironmentDomain
+        /// </summary>
+        public string CustomWebSocketBaseUrl { get; set; }
 
         /// <summary>
         /// App version (optional)
@@ -57,23 +64,36 @@ namespace VyinChatSdk.Internal.Data.Network
 
         /// <summary>
         /// Build WebSocket URL
-        /// Format: wss://{appId}.{domain}/ws?user_id=xxx&access_token=yyy&...
+        /// If CustomWebSocketBaseUrl is set, uses it directly
+        /// Otherwise builds: wss://{appId}.{domain}/ws?user_id=xxx&access_token=yyy&...
         /// Based on Swift SDK: GIMConnection.getSocketPath()
         /// </summary>
         public string BuildWebSocketUrl()
         {
-            if (string.IsNullOrEmpty(ApplicationId))
-            {
-                throw new ArgumentException("ApplicationId cannot be null or empty");
-            }
-
             if (string.IsNullOrEmpty(UserId))
             {
                 throw new ArgumentException("UserId cannot be null or empty");
             }
 
-            // Build host: wss://{appId}.{domain}/ws
-            string host = $"wss://{ApplicationId}.{EnvironmentDomain}/ws";
+            // Determine base URL
+            string baseUrl;
+            if (!string.IsNullOrEmpty(CustomWebSocketBaseUrl))
+            {
+                // Use custom URL directly
+                baseUrl = CustomWebSocketBaseUrl.TrimEnd('/');
+            }
+            else
+            {
+                // Build from ApplicationId and EnvironmentDomain
+                if (string.IsNullOrEmpty(ApplicationId))
+                {
+                    throw new ArgumentException("ApplicationId cannot be null or empty when CustomWebSocketBaseUrl is not set");
+                }
+                baseUrl = $"wss://{ApplicationId}.{EnvironmentDomain}";
+            }
+
+            // Add /ws path if not already present
+            string host = baseUrl.EndsWith("/ws") ? baseUrl : $"{baseUrl}/ws";
 
             // Build query parameters (matching Swift SDK)
             var queryParams = new System.Collections.Generic.List<string>

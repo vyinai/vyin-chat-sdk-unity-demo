@@ -89,6 +89,9 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 _webSocket.OnMessage += HandleOnMessage;
                 _webSocket.OnError += HandleOnError;
 
+                // Register Update callback for message dispatching
+                MainThreadDispatcher.RegisterUpdateCallback(Update);
+
                 // Start connection
                 _ = _webSocket.Connect();
             }
@@ -109,6 +112,9 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 Debug.Log("[UnityWebSocketClient] Disconnecting");
                 CancelAuthTimeout();
                 ClearAllPendingAcks();
+
+                // Unregister Update callback
+                MainThreadDispatcher.UnregisterUpdateCallback(Update);
 
                 try
                 {
@@ -195,6 +201,10 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             Debug.Log($"[UnityWebSocketClient] Connection closed: {closeCode}");
             CancelAuthTimeout();
             ClearAllPendingAcks();
+
+            // Unregister Update callback
+            MainThreadDispatcher.UnregisterUpdateCallback(Update);
+
             MainThreadDispatcher.Enqueue(() =>
             {
                 OnDisconnected?.Invoke();
@@ -333,9 +343,12 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
             var logi = CommandParser.ParseLogiCommand(message);
             if (logi != null)
             {
+                Debug.Log($"[UnityWebSocketClient] LOGI parsed - SessionKey: {logi.SessionKey}, Error: {logi.Error}");
+
                 if (logi.IsSuccess())
                 {
                     _sessionKey = logi.SessionKey;
+                    Debug.Log($"[UnityWebSocketClient] Authentication successful with session key: {_sessionKey}");
                     CancelAuthTimeout();
                     MainThreadDispatcher.Enqueue(() =>
                     {
@@ -344,12 +357,17 @@ namespace VyinChatSdk.Internal.Platform.Unity.Network
                 }
                 else
                 {
+                    Debug.LogError($"[UnityWebSocketClient] LOGI authentication failed");
                     CancelAuthTimeout();
                     MainThreadDispatcher.Enqueue(() =>
                     {
                         OnError?.Invoke("Authentication failed (LOGI error).");
                     });
                 }
+            }
+            else
+            {
+                Debug.LogError($"[UnityWebSocketClient] Failed to parse LOGI command from message: {message}");
             }
         }
 

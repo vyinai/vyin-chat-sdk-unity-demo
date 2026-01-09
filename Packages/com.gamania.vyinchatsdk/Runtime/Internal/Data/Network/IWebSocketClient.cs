@@ -34,9 +34,20 @@ namespace VyinChatSdk.Internal.Data.Network
         event Action<string> OnError;
 
         /// <summary>
+        /// Event triggered when authentication is successful (LOGI received)
+        /// Parameter: session key
+        /// </summary>
+        event Action<string> OnAuthenticated;
+
+        /// <summary>
         /// Current connection state
         /// </summary>
         bool IsConnected { get; }
+
+        /// <summary>
+        /// Session key received from LOGI command
+        /// </summary>
+        string SessionKey { get; }
 
         /// <summary>
         /// Connect to WebSocket server with configuration
