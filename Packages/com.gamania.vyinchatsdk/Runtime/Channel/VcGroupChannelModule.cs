@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using VyinChatSdk.Internal.Platform;
+using VyinChatSdk.Internal.Platform.Unity;
 using VyinChatSdk.Internal.Domain.UseCases;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -12,144 +13,165 @@ namespace VyinChatSdk
 {
     public static class VcGroupChannelModule
     {
-        public static async void GetGroupChannel(
+        #region GetGroupChannel
+
+        /// <summary>
+        /// Retrieves a group channel by its URL using async/await pattern.
+        /// </summary>
+        /// <param name="channelUrl">The unique URL of the channel to retrieve</param>
+        /// <returns>The requested group channel</returns>
+        /// <exception cref="VcException">Thrown when the operation fails</exception>
+        public static async Task<VcGroupChannel> GetGroupChannelAsync(string channelUrl)
+        {
+            var repository = VyinChatMain.Instance.GetChannelRepository();
+            var useCase = new GetChannelUseCase(repository);
+            return await useCase.ExecuteAsync(channelUrl);
+        }
+
+        /// <summary>
+        /// Retrieves a group channel by its URL using callback pattern (legacy).
+        /// </summary>
+        /// <param name="channelUrl">The unique URL of the channel to retrieve</param>
+        /// <param name="callback">Callback invoked with the channel or error message</param>
+        public static void GetGroupChannel(
             string channelUrl,
             VcGroupChannelCallbackHandler callback)
         {
-            try
+            if (callback == null)
             {
-                var repository = VyinChatMain.Instance.GetChannelRepository();
-                var useCase = new GetChannelUseCase(repository);
-                var channel = await useCase.ExecuteAsync(channelUrl);
+                Debug.LogWarning("[VcGroupChannelModule] GetGroupChannel: callback is null");
+                return;
+            }
 
-                callback?.Invoke(channel, null);
-            }
-            catch (VcException vcEx)
-            {
-                Debug.LogError($"[VcGroupChannelModule] GetGroupChannel failed: {vcEx.Message}");
-                callback?.Invoke(null, vcEx.Message);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[VcGroupChannelModule] GetGroupChannel error: {ex.Message}");
-                callback?.Invoke(null, ex.Message);
-            }
+            _ = ExecuteAsyncWithCallback(
+                () => GetGroupChannelAsync(channelUrl),
+                callback,
+                "GetGroupChannel"
+            );
         }
 
-        public static void CreateGroupChannel(
-            VcGroupChannelCreateParams inChannelCreateParams,
-            VcGroupChannelCallbackHandler inGroupChannelCallbackHandler)
+        #endregion
+
+        #region CreateGroupChannel
+
+        /// <summary>
+        /// Creates a new group channel using async/await pattern.
+        /// </summary>
+        /// <param name="createParams">Parameters for creating the channel</param>
+        /// <returns>The newly created group channel</returns>
+        /// <exception cref="VcException">Thrown when the operation fails</exception>
+        public static async Task<VcGroupChannel> CreateGroupChannelAsync(VcGroupChannelCreateParams createParams)
         {
-            if (Application.platform == RuntimePlatform.Android)
-            {
-                try
-                {
-                    AndroidJavaClass androidBridge = new AndroidJavaClass("com.gamania.gim.unitybridge.UnityBridge");
-                    AndroidJavaObject paramsObj = inChannelCreateParams.ToAndroidJavaObject();
-                    var proxy = new GroupChannelCallbackProxy(inGroupChannelCallbackHandler);
-                    androidBridge.CallStatic("createChannel", paramsObj, proxy);
-                }
-                catch (Exception e)
-                {
-                    inGroupChannelCallbackHandler?.Invoke(null, e.Message);
-                }
-            }
-            else if (Application.platform == RuntimePlatform.IPhonePlayer)
-            {
-#if UNITY_IOS
-                try
-                {
-                    Internal.ChatSDKWrapper.CreateGroupChannel(inChannelCreateParams, inGroupChannelCallbackHandler);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("[VyinChat] Error calling iOS CreateGroupChannel: " + e);
-                    inGroupChannelCallbackHandler?.Invoke(null, e.Message);
-                }
-#else
-                inGroupChannelCallbackHandler?.Invoke(null, "iOS SDK not available in this build");
-#endif
-            }
-            else
-            {
-                inGroupChannelCallbackHandler?.Invoke(null, "Platform not supported");
-            }
+            var repository = VyinChatMain.Instance.GetChannelRepository();
+            var useCase = new CreateChannelUseCase(repository);
+            return await useCase.ExecuteAsync(createParams);
         }
 
+        /// <summary>
+        /// Creates a new group channel using callback pattern (legacy).
+        /// </summary>
+        /// <param name="createParams">Parameters for creating the channel</param>
+        /// <param name="callback">Callback invoked with the created channel or error message</param>
+        public static void CreateGroupChannel(
+            VcGroupChannelCreateParams createParams,
+            VcGroupChannelCallbackHandler callback)
+        {
+            if (callback == null)
+            {
+                Debug.LogWarning("[VcGroupChannelModule] CreateGroupChannel: callback is null");
+                return;
+            }
+
+            _ = ExecuteAsyncWithCallback(
+                () => CreateGroupChannelAsync(createParams),
+                callback,
+                "CreateGroupChannel"
+            );
+        }
+
+        #endregion
+
+        #region Deprecated CreateGroupChannel (string, string callback)
+
+        /// <summary>
+        /// [DEPRECATED] Creates a group channel with JSON string callback - use CreateGroupChannelAsync instead
+        /// </summary>
+        [Obsolete("Use CreateGroupChannelAsync or CreateGroupChannel with VcGroupChannelCallbackHandler instead")]
         public static void CreateGroupChannel(
             VcGroupChannelCreateParams channelCreateParams,
             Action<string, string> callback)
         {
+            if (callback == null)
+            {
+                Debug.LogWarning("[VcGroupChannelModule] CreateGroupChannel: callback is null");
+                return;
+            }
+
             if (channelCreateParams == null)
             {
-                callback?.Invoke(null, "channelCreateParams is null");
+                callback.Invoke(null, "channelCreateParams is null");
                 return;
             }
 
-            string channelName = channelCreateParams.Name;
-            string[] userIds = (channelCreateParams.UserIds ?? new List<string>()).ToArray();
-
-#if UNITY_EDITOR
-            if (Application.isEditor)
-            {
-                Debug.Log($"[VyinChat] Simulate CreateGroupChannel in Editor, name={channelName}, users={userIds.Length}");
-                EditorApplication.delayCall += () =>
-                {
-                    string fakeResult = $"{{\"channelUrl\":\"channel_editor_123\",\"name\":\"{channelName}\"}}";
-                    callback?.Invoke(fakeResult, null);
-                };
-                return;
-            }
-#endif
-
-            // Unified handler for both platforms
-            void handler(VcGroupChannel channel, string error)
+            // Convert to new API by wrapping the callback
+            VcGroupChannelCallbackHandler handler = (channel, error) =>
             {
                 if (!string.IsNullOrEmpty(error))
                 {
-                    callback?.Invoke(null, error);
-                    Debug.LogError("[VyinChat] Error calling CreateGroupChannel: " + error);
+                    callback.Invoke(null, error);
                     return;
                 }
-                string channelUrl = channel?.ChannelUrl;
-                string channelNameResult = channel?.Name;
-                string result = $"{{\"channelUrl\":\"{channelUrl}\",\"name\":\"{channelNameResult}\"}}";
-                callback?.Invoke(result, null);
-            }
 
-            if (Application.platform == RuntimePlatform.Android)
+                string channelUrl = channel?.ChannelUrl;
+                string channelName = channel?.Name;
+                string result = $"{{\"channelUrl\":\"{channelUrl}\",\"name\":\"{channelName}\"}}";
+                callback.Invoke(result, null);
+            };
+
+            CreateGroupChannel(channelCreateParams, handler);
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Executes an async operation and invokes callback with result or error.
+        /// Ensures callback is always invoked on main thread.
+        /// </summary>
+        private static async Task ExecuteAsyncWithCallback(
+            Func<Task<VcGroupChannel>> asyncOperation,
+            VcGroupChannelCallbackHandler callback,
+            string operationName)
+        {
+            try
             {
-                try
+                var channel = await asyncOperation();
+                MainThreadDispatcher.Enqueue(() =>
                 {
-                    CreateGroupChannel(channelCreateParams, handler);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("[VyinChat] Error calling CreateGroupChannel: " + e);
-                    callback?.Invoke(null, e.Message);
-                }
+                    callback?.Invoke(channel, null);
+                });
             }
-            else if (Application.platform == RuntimePlatform.IPhonePlayer)
+            catch (VcException vcEx)
             {
-#if UNITY_IOS
-                try
+                Debug.LogError($"[VcGroupChannelModule] {operationName} failed: {vcEx.Message}");
+                MainThreadDispatcher.Enqueue(() =>
                 {
-                    Internal.ChatSDKWrapper.CreateGroupChannel(channelCreateParams, handler);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("[VyinChat] Error calling iOS CreateGroupChannel: " + e);
-                    callback?.Invoke(null, e.Message);
-                }
-#else
-                callback?.Invoke(null, "iOS SDK not available in this build");
-#endif
+                    callback?.Invoke(null, vcEx.Message);
+                });
             }
-            else
+            catch (Exception ex)
             {
-                callback?.Invoke(null, "Platform not supported");
+                Debug.LogError($"[VcGroupChannelModule] {operationName} error: {ex.Message}");
+                var errorMessage = $"Unexpected error: {ex.Message}";
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    callback?.Invoke(null, errorMessage);
+                });
             }
         }
+
+        #endregion
 
         private class GroupChannelCallbackProxy : AndroidJavaProxy
         {

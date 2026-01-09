@@ -11,33 +11,35 @@ using UnityEditor;
 #endif
 
 using Newtonsoft.Json;
+using VyinChatSdk.Internal;
+using VyinChatSdk.Internal.Platform.Unity;
 
 namespace VyinChatSdk
 {
     public static class VyinChat
     {
-        private static readonly Internal.IVyinChat vyinChatImpl;
+        private static readonly IVyinChat vyinChatImpl;
 
         static VyinChat()
         {
 #if UNITY_EDITOR
             // Unity Editor uses Pure C# implementation to connect to real server
             Debug.Log("[VyinChat] Platform: Editor (Pure C# implementation)");
-            vyinChatImpl = new Internal.Platform.VyinChatMain();
+            vyinChatImpl = VyinChatMain.Instance;
 #else
             switch (Application.platform)
             {
                 case RuntimePlatform.Android:
                     Debug.Log("[VyinChat] Platform: Android");
-                    vyinChatImpl = new Internal.VyinChatAndroid();
+                    vyinChatImpl = new VyinChatAndroid();
                     break;
                 case RuntimePlatform.IPhonePlayer:
                     Debug.Log("[VyinChat] Platform: iOS");
-                    vyinChatImpl = new Internal.VyinChatIOS();
+                    vyinChatImpl = new VyinChatIOS();
                     break;
                 default:
                     Debug.Log("[VyinChat] Platform: Unsupported, using Pure C# implementation");
-                    vyinChatImpl = new Internal.Platform.VyinChatMain();
+                    vyinChatImpl = VyinChatMain.Instance;
                     break;
             }
 #endif
@@ -372,7 +374,7 @@ namespace VyinChatSdk
             _initParams = null;
 
             // Reset the implementation instance state
-            if (vyinChatImpl is Internal.Platform.VyinChatMain vyinChatMain)
+            if (vyinChatImpl is VyinChatMain vyinChatMain)
             {
                 vyinChatMain.Reset();
             }

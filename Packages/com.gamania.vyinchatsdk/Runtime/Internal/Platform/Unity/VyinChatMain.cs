@@ -5,7 +5,7 @@ using VyinChatSdk.Internal.Data.Repositories;
 using VyinChatSdk.Internal.Domain.Repositories;
 using VyinChatSdk.Internal.Platform.Unity.Network;
 
-namespace VyinChatSdk.Internal.Platform
+namespace VyinChatSdk.Internal.Platform.Unity
 {
     internal class VyinChatMain : IVyinChat
     {
@@ -186,8 +186,9 @@ namespace VyinChatSdk.Internal.Platform
         {
             if (_initParams == null)
             {
-                throw new InvalidOperationException(
-                    "VyinChatMain not initialized. Call Init() first.");
+                throw new VcException(
+                    VcErrorCode.InvalidInitialization,
+                    "VyinChat SDK is not initialized. Call VyinChat.Init() first.");
             }
         }
 
